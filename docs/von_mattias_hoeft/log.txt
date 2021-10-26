@@ -1,0 +1,113 @@
+Filename: LOFAR_HBA_T1_DR1_catalog_v1.0.srl.fits
+No.    Name      Ver    Type      Cards   Dimensions   Format
+  0  PRIMARY       1 PrimaryHDU       4   ()      
+  1                1 BinTableHDU     91   325694R x 29C   [24A, D, D, D, D, D, D, D, D, D, D, D, D, D, D, D, D, D, D, D, D, D, D, D, D, D, 1A, 11A, J]   
+XTENSION= 'BINTABLE'           / binary table extension                         
+BITPIX  =                    8 / array data type                                
+NAXIS   =                    2 / number of array dimensions                     
+NAXIS1  =                  240 / length of dimension 1                          
+NAXIS2  =               325694 / length of dimension 2                          
+PCOUNT  =                    0 / number of group parameters                     
+GCOUNT  =                    1 / number of groups                               
+TFIELDS =                   29 / number of table fields                         
+TTYPE1  = 'Source_Name'                                                         
+TFORM1  = '24A     '                                                            
+TTYPE2  = 'RA      '                                                            
+TFORM2  = 'D       '                                                            
+TUNIT2  = 'deg     '                                                            
+TTYPE3  = 'E_RA    '                                                            
+TFORM3  = 'D       '                                                            
+TUNIT3  = 'arcsec  '                                                            
+TTYPE4  = 'E_RA_tot'                                                            
+TFORM4  = 'D       '                                                            
+TUNIT4  = 'arcsec  '                                                            
+TTYPE5  = 'DEC     '                                                            
+TFORM5  = 'D       '                                                            
+TUNIT5  = 'deg     '                                                            
+TTYPE6  = 'E_DEC   '                                                            
+TFORM6  = 'D       '                                                            
+TUNIT6  = 'arcsec  '                                                            
+TTYPE7  = 'E_DEC_tot'                                                           
+TFORM7  = 'D       '                                                            
+TUNIT7  = 'arcsec  '                                                            
+TTYPE8  = 'Peak_flux'                                                           
+TFORM8  = 'D       '                                                            
+TUNIT8  = 'beam-1 mJy'                                                          
+TTYPE9  = 'E_Peak_flux'                                                         
+TFORM9  = 'D       '                                                            
+TUNIT9  = 'beam-1 mJy'                                                          
+TTYPE10 = 'E_Peak_flux_tot'                                                     
+TFORM10 = 'D       '                                                            
+TUNIT10 = 'beam-1 mJy'                                                          
+TTYPE11 = 'Total_flux'                                                          
+TFORM11 = 'D       '                                                            
+TUNIT11 = 'mJy     '                                                            
+TTYPE12 = 'E_Total_flux'                                                        
+TFORM12 = 'D       '                                                            
+TUNIT12 = 'mJy     '                                                            
+TTYPE13 = 'E_Total_flux_tot'                                                    
+TFORM13 = 'D       '                                                            
+TUNIT13 = 'mJy     '                                                            
+TTYPE14 = 'Maj     '                                                            
+TFORM14 = 'D       '                                                            
+TUNIT14 = 'arcsec  '                                                            
+TTYPE15 = 'E_Maj   '                                                            
+TFORM15 = 'D       '                                                            
+TUNIT15 = 'arcsec  '                                                            
+TTYPE16 = 'Min     '                                                            
+TFORM16 = 'D       '                                                            
+TUNIT16 = 'arcsec  '                                                            
+TTYPE17 = 'E_Min   '                                                            
+TFORM17 = 'D       '                                                            
+TUNIT17 = 'arcsec  '                                                            
+TTYPE18 = 'DC_Maj  '                                                            
+TFORM18 = 'D       '                                                            
+TUNIT18 = 'arcsec  '                                                            
+TTYPE19 = 'E_DC_Maj'                                                            
+TFORM19 = 'D       '                                                            
+TUNIT19 = 'arcsec  '                                                            
+TTYPE20 = 'DC_Min  '                                                            
+TFORM20 = 'D       '                                                            
+TUNIT20 = 'arcsec  '                                                            
+TTYPE21 = 'E_DC_Min'                                                            
+TFORM21 = 'D       '                                                            
+TUNIT21 = 'arcsec  '                                                            
+TTYPE22 = 'PA      '                                                            
+TFORM22 = 'D       '                                                            
+TUNIT22 = 'deg     '                                                            
+TTYPE23 = 'E_PA    '                                                            
+TFORM23 = 'D       '                                                            
+TUNIT23 = 'deg     '                                                            
+TTYPE24 = 'DC_PA   '                                                            
+TFORM24 = 'D       '                                                            
+TUNIT24 = 'deg     '                                                            
+TTYPE25 = 'E_DC_PA '                                                            
+TFORM25 = 'D       '                                                            
+TUNIT25 = 'deg     '                                                            
+TTYPE26 = 'Isl_rms '                                                            
+TFORM26 = 'D       '                                                            
+TUNIT26 = 'beam-1 mJy'                                                          
+TTYPE27 = 'S_Code  '                                                            
+TFORM27 = '1A      '                                                            
+TTYPE28 = 'Mosaic_ID'                                                           
+TFORM28 = '11A     '                                                            
+TTYPE29 = 'Isl_id  '                                                            
+TFORM29 = 'J       '                                                            
+('ILTJ122108.44+491340.9', 185.28516877080278, 0.08507008411738805, 0.1500160490083484, 49.22803976784459, 0.09402500843402939, 0.15526943665562457, 1.4871877664600872, 0.05254471658028932, 0.3020431183603504, 1.4516772350894518, 0.09187271628868793, 0.30452465876073154, 6.196006627074602, 0.22896105350895785, 5.673333506824536, 0.19165276631465974, 0.0, 0.22896105350895785, 0.0, 0.19165276631465974, 153.93537616228963, 18.490888645800393, 0.0, 18.490888645800393, 0.052946499636163935, 'S', 'P22Hetdex04', 188)
+<SkyCoord (FK5: equinox=J2000.000): (ra, dec) in deg
+    (205.15916667, 55.83916667)>
+  c1:   13h40m38.2s 55d50m21s
+  c2:   13h40m39.692s 55d50m27.5973s
+   sep:   14.188237134526606   arcsec
+  c1:   13h40m38.2s 55d50m21s
+  c2:   13h40m35.3443s 55d49m31.8147s
+   sep:   54.75548459070931   arcsec
+  c1:   13h40m38.2s 55d50m21s
+  c2:   13h40m31.8344s 55d51m58.3163s
+   sep:   111.10227764747961   arcsec
+  c1:   13h40m38.2s 55d50m21s
+  c2:   13h40m29.0936s 55d51m13.3069s
+   sep:   92.83183555812853   arcsec
+  c1:   13h40m38.2s 55d50m21s
+  c2:   13h40m26.7282s 55d49m28.3558s
+   sep:   110.05496958168085   arcsec
