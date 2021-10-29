@@ -9,7 +9,6 @@ import os
 from typing import Tuple
 import requests
 import pandas as pd
-from hda_fits.logging_config import logging
 from astropy.io import fits
 from astropy.table import Table
 from astropy.wcs import WCS
@@ -17,6 +16,8 @@ from astropy.nddata import Cutout2D
 from astropy.io.fits.hdu.image import PrimaryHDU
 
 from typing import Tuple, Union, NamedTuple
+
+from hda_fits.logging_config import logging
 
 
 class WCSCoordinates(NamedTuple):
@@ -30,7 +31,7 @@ class RectangleSize(NamedTuple):
 
 
 log = logging.getLogger(__name__)
-
+log.setLevel(logging.DEBUG)
 
 MOSAIC_FILENAME_TEMPLATE = "{}-mosaic.fits"
 
@@ -83,8 +84,12 @@ def load_mosaic(mosaic_id: str, path: str, download=False):
 
 
 def create_cutout2D(
-    hdu: PrimaryHDU, coordinates: WCSCoordinates, cutout_size: Union[int, RectangleSize]
+    hdu: PrimaryHDU, coordinates: WCSCoordinates, size: Union[int, RectangleSize]
 ):
     wcs = WCS(hdu.header)
     position = wcs.wcs_world2pix([coordinates], 0)
-    return Cutout2D(hdu.data, position[0], cutout_size)
+    cutout = Cutout2D(hdu.data, position[0], size, wcs=wcs)
+    hdu_cutout = hdu.copy()
+    hdu_cutout.data = cutout.data
+    hdu_cutout.header.update(cutout.wcs.to_header())
+    return hdu_cutout
