@@ -1,4 +1,5 @@
 import pytest
+
 from hda_fits import fits
 from hda_fits.logging_config import logging
 

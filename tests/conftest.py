@@ -1,7 +1,8 @@
-import pytest
 from pathlib import Path
-from astropy.table import Table
+
+import pytest
 from astropy.io import fits
+from astropy.table import Table
 from astropy.wcs import WCS
 
 from hda_fits.fits import WCSCoordinates

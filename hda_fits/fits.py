@@ -6,16 +6,15 @@ meta information as well as creating 2D cutouts of objects of
 interest.
 """
 import os
-from typing import Tuple
-import requests
+from typing import NamedTuple, Union
+
 import pandas as pd
+import requests
 from astropy.io import fits
+from astropy.io.fits.hdu.image import PrimaryHDU
+from astropy.nddata import Cutout2D
 from astropy.table import Table
 from astropy.wcs import WCS
-from astropy.nddata import Cutout2D
-from astropy.io.fits.hdu.image import PrimaryHDU
-
-from typing import Tuple, Union, NamedTuple
 
 from hda_fits.logging_config import logging
 
