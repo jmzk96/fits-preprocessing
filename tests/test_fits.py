@@ -32,7 +32,7 @@ def test_rectangular_cutout_creation(
     mosaic_hdu_and_wcs, example_object_world_coordinates
 ):
     hdu, wcs = mosaic_hdu_and_wcs
-    size = fits.RectangleSize(width=100, height=200)
+    size = fits.RectangleSize(image_height=100, image_width=200)
     cutout = fits.create_cutout2D(
         hdu=hdu, coordinates=example_object_world_coordinates, size=size
     )
