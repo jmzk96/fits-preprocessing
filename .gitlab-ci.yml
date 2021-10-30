@@ -3,6 +3,7 @@ image: "python:3.7"
 before_script:
   - python --version
   - pip install -r requirements.txt
+  - python -m pip install --upgrade pip
 
 stages:
   - Linting
@@ -11,13 +12,13 @@ stages:
 flake8:
   stage: Linting
   script: 
-  - flake8 --max-line-length=130 *.py
+  - flake8 --max-line-length=130 JeremysCode/*.py
 
 pylint:
   stage: Linting
   allow_failure: true
   script:
-    - pylint -d C0301 *.py
+    - pylint -d C0301 Jeremys/Code*.py
 
 unittest:
   stage: Testing
