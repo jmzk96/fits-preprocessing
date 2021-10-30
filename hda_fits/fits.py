@@ -105,7 +105,7 @@ def create_cutout2D_as_flattened_numpy_array(
     size: Union[int, RectangleSize],
     wcs: WCS = None,
 ) -> np.ndarray:
-    return create_cutout2D(hdu, coordinates, size, wcs).data.flatten()
+    return create_cutout2D(hdu, coordinates, size, wcs).data.flatten().astype("float32")
 
 
 def create_cutout2D_as_updated_hdu(

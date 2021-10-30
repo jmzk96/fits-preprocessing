@@ -12,12 +12,20 @@ from astropy.io.fits.hdu.image import PrimaryHDU
 
 import hda_fits.fits as hfits
 from hda_fits.fits import RectangleSize, WCSCoordinates
+from hda_fits.logging_config import logging
+
+log = logging.getLogger(__name__)
+log.setLevel(logging.DEBUG)
 
 
 def write_pink_file_v2_header(
-    filepath: str, number_of_images: int, image_height: int, image_width: int
+    filepath: str,
+    number_of_images: int,
+    image_height: int,
+    image_width: int,
+    overwrite: bool = False,
 ):
-    with open(filepath, "wb") as f:
+    with open(filepath, "r+b" if overwrite else "wb") as f:
         f.write(
             struct.pack(
                 "i" * 8, 2, 0, 0, number_of_images, 0, 2, image_height, image_width
@@ -35,19 +43,43 @@ def write_mosaic_objects_to_pink_file_v2(
     hdu: PrimaryHDU,
     coordinates: List[WCSCoordinates],
     image_size: Union[int, RectangleSize],
-):
+    min_max_scale: bool = True,
+) -> str:
     if isinstance(image_size, int):
         image_size = RectangleSize(image_size, image_size)
 
     number_of_pixels = image_size.image_height * image_size.image_width
+    number_of_images = len(coordinates)
 
     write_pink_file_v2_header(
         filepath=filepath,
-        number_of_images=10,
+        number_of_images=number_of_images,
         image_height=image_size.image_height,
         image_width=image_size.image_width,
+        overwrite=False,
     )
     for coord in coordinates:
         data = hfits.create_cutout2D_as_flattened_numpy_array(hdu, coord, 200)
-        assert data.size == number_of_pixels
-        write_pink_file_v2_data(filepath, data)
+
+        if min_max_scale:
+            dmax, dmin = data.max(), data.min()
+            data = (data - dmin) / (dmax - dmin)
+
+        if data.size == number_of_pixels:
+            write_pink_file_v2_data(filepath, data)
+        else:
+            log.warning(
+                f"Data was truncated. Expected {number_of_pixels}, got {data.size} floats."
+            )
+            number_of_images -= 1
+            write_pink_file_v2_header(
+                filepath=filepath,
+                number_of_images=number_of_images,
+                image_height=image_size.image_height,
+                image_width=image_size.image_width,
+                overwrite=True,
+            )
+
+    log.debug(f"Wrote {number_of_images} images to {filepath}")
+
+    return filepath
