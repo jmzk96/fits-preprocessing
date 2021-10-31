@@ -37,10 +37,7 @@ import hda_fits as hf
 table = hf.read_shimwell_catalog("data/LOFAR_HBA_T1_DR1_catalog_v1.0.srl.fits", reduced=True)
 
 # Filtern des Pandas DF nach Rows, die zu Mosaic P205+55 gehören
-table = (
-  table[table.Mosaic_ID.str.contains("P205")]
-  .loc[:, ["Source_Name", "RA", "DEC", "Mosaic_ID"]]
-)
+table = table[table.Mosaic_ID.str.contains("P205")]
 
 # Mosaic Einlesen
 hdu = hf.load_mosaic("P205+55", "../data/")[0]
