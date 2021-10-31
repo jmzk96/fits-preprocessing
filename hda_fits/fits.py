@@ -21,11 +21,15 @@ from hda_fits.logging_config import logging
 
 
 class WCSCoordinates(NamedTuple):
+    """Right ascension (RA) and declination (DEC) coordinates"""
+
     RA: float
     DEC: float
 
 
 class RectangleSize(NamedTuple):
+    """The height and width of a rectangle"""
+
     image_height: int
     image_width: int
 
@@ -43,6 +47,11 @@ def column_dtype_byte_to_string(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def read_shimwell_catalog(path: str, reduced=False) -> pd.DataFrame:
+    """Reads in the shimwell catalog as DataFrame
+
+    Additionally converts the byte columns to string such that they
+    can be used in filtering actions via str-functions.
+    """
     table = Table.read(path).to_pandas()
     if reduced:
         table = table.loc[:, ["Source_Name", "RA", "DEC", "Mosaic_ID"]].copy()
@@ -72,6 +81,16 @@ def download_mosaic(mosaic_id: str, path: str = "") -> str:
 def load_mosaic(
     mosaic_id: str, path: str, download=False
 ) -> Optional[List[PrimaryHDU]]:
+    """Load mosaic with mosaic_id from filepath
+
+    This function loads the specified mosaic file with `mosaic_id`
+    from the the specified path. If download is set to True, the
+    function will try to download the mosaic from the
+    [official LOFAR data release page](https://lofar-surveys.org/releases.html)
+    and store it under the specified `path`. This requires that a valid
+    mosaic_id is provided.
+    """
+
     mosaic_filepath = create_mosaic_filepath(mosaic_id, path)
 
     if not os.path.exists(mosaic_filepath) and download:
