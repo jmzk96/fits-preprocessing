@@ -11,17 +11,20 @@ stages:
 
 flake8:
   stage: Linting
-  script: 
-  - flake8 --max-line-length=130 JeremysCode/*.py
+  script:
+    # - flake8 --max-line-length=130 src/*.py
+    - flake8 --max-line-length=130 JeremysCode/*.py
 
 pylint:
   stage: Linting
   allow_failure: true
   script:
-    - pylint -d C0301 Jeremys/Code*.py
+    # - pylint -d C0301 src/*.py
+    - pylint -d C0301 JeremysCode/*.py
 
-unittest:
-  stage: Testing
-  script:
-    - pytest 
+# unittest:
+#   stage: Testing
+#   script:
+#     - cd test/
+#     - pytest
 
