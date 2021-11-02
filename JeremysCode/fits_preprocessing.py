@@ -17,7 +17,7 @@ def read_fits(fits_path:str):
         fits_file= fits.open(fits_path)
         return fits_file
     except OSError:
-        print("Could not read/open file"), fits_path
+        print("Could not read/open file",fits_path)
         sys.exit()
         
 def get_header_and_data(hdulist:fits.hdu.hdulist.HDUList):
