@@ -30,7 +30,6 @@ pylint:
 
 black:
   stage: Static Analysis
-  image: milansuk/python-black:latest
   script:
     - black --fast ./**/*.py
 
