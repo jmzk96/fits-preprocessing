@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 astroid==2.8.4
 astropy==4.3.1
 atomicwrites==1.4.0
@@ -28,3 +29,8 @@ six==1.16.0
 toml==0.10.2
 typing-extensions==3.10.0.2
 wrapt==1.13.3
+=======
+astropy==4.3.1
+numpy==1.21.3
+pandas==1.3.4
+>>>>>>> master
