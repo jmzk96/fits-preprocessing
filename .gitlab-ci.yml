@@ -1,0 +1,42 @@
+image: "python:3.8"
+
+before_script:
+  - python --version
+  - python -m pip install --upgrade pip
+  - pip install -r requirements_dev.txt
+  - pip install flake8 black pylint pytest isort
+stages:
+  - Static Analysis
+  - Testing
+
+isort:
+  stage: Static Analysis
+  script: 
+    - isort ./**/*.py
+
+flake8:
+  stage: Static Analysis
+  allow_failure: true
+  script:
+    - flake8 --max-line-length=130 doc ./**/*.py
+    # - flake8 --max-line-length=130 JeremysCode/*.py (initially from Jeremy)
+
+pylint:
+  stage: Static Analysis
+  allow_failure: true
+  script:
+    - pylint -d C0301 ./**/*.py
+    # - pylint -d C0301 JeremysCode/*.py (initially from Jeremy)
+
+black:
+  stage: Static Analysis
+  image: milansuk/python-black:latest
+  script:
+    - black --fast ./**/*.py
+
+unittest:
+  stage: Testing
+  script:
+    - cd tests/
+    - pytest -v
+
