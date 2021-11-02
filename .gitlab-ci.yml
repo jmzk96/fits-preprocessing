@@ -3,29 +3,37 @@ image: "python:3.7"
 before_script:
   - python --version
   - pip install -r requirements.txt
+  - pip install flake8 black pylint pytest
   - python -m pip install --upgrade pip
 
 stages:
-  - Linting
+  - Static Analysis
+  - Sorting
   - Testing
 
 flake8:
-  stage: Linting
+  stage: Static Analysis
   allow_failure: true
   script:
-    # - flake8 --max-line-length=130 src/*.py
-    - flake8 --max-line-length=130 JeremysCode/*.py
+    - flake8 --max-line-length=130 doc ./**/*.py
+    # - flake8 --max-line-length=130 JeremysCode/*.py (initially from Jeremy)
 
 pylint:
-  stage: Linting
+  stage: Static Analysis
   allow_failure: true
   script:
-    # - pylint -d C0301 src/*.py
-    - pylint -d C0301 JeremysCode/*.py
+    - pylint -d C0301 ./**/*.py
+    # - pylint -d C0301 JeremysCode/*.py (initially from Jeremy)
 
-# unittest:
-#   stage: Testing
-#   script:
-#     - cd test/
-#     - pytest
+black:
+  stage: Static Analysis
+  image: milansuk/python-black:latest
+  script:
+    - black --fast ./**/*.py
+
+unittest:
+  stage: Testing
+  script:
+    - cd tests/
+    - pytest -v
 
