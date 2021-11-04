@@ -59,7 +59,7 @@ def write_mosaic_objects_to_pink_file_v2(
         overwrite=False,
     )
     for coord in coordinates:
-        data = hfits.create_cutout2D_as_flattened_numpy_array(hdu, coord, 200)
+        data = hfits.create_cutout2D_as_flattened_numpy_array(hdu, coord, image_size)
 
         if min_max_scale:
             dmax, dmin = data.max(), data.min()
