@@ -83,3 +83,31 @@ def write_mosaic_objects_to_pink_file_v2(
     log.debug(f"Wrote {number_of_images} images to {filepath}")
 
     return filepath
+
+def write_all_objects_pink_file_v2(
+    catalog_path: str,
+    filepath: str,
+    output_mosaic_path: str,
+    image_size: Union[int, RectangleSize],
+    min_max_scale: bool = True,
+    save_in_different_files : bool = True,
+    download: bool = False,
+):
+    catalog = hda_fits.read_shimwell_catalog(catalog_path,reduced=True)
+    list_of_mosaics=catalog.Mosaic_ID.unique().tolist()
+    for i in list_of_mosaics:
+        mosaic = hda_fits.load_mosaic(i, output_mosaic_path, download = download)
+        hdu = mosaic[0]
+        table_with_unique_mosaic = catalog[catalog.Mosaic_ID == i]
+        coord = table_with_unique_mosaic.loc[:,["RA","DEC"]].values.tolist()
+        if save_in_different_files:
+            pink_bin_file = hda_fits.write_mosaic_objects_to_pink_file_v2(filepath=filepath + f"{i}.bin",
+                                                                          coordinates=coord,hdu=hdu,
+                                                                          image_size=image_size, 
+                                                                          min_max_scale=min_max_scale)
+        else:
+            pink_bin_file = hda_fits.write_mosaic_objects_to_pink_file_v2(filepath=filepath + f"all_objects_pink.bin",
+                                                                          coordinates=coord,hdu=hdu,
+                                                                          image_size=image_size, 
+                                                                          min_max_scale=min_max_scale)
+      
