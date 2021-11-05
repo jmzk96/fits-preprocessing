@@ -95,19 +95,26 @@ def write_all_objects_pink_file_v2(
 ):
     catalog = hda_fits.read_shimwell_catalog(catalog_path,reduced=True)
     list_of_mosaics=catalog.Mosaic_ID.unique().tolist()
+    list_of_num_coords = []
     for i in list_of_mosaics:
         mosaic = hda_fits.load_mosaic(i, output_mosaic_path, download = download)
         hdu = mosaic[0]
         table_with_unique_mosaic = catalog[catalog.Mosaic_ID == i]
         coord = table_with_unique_mosaic.loc[:,["RA","DEC"]].values.tolist()
+        list_of_num_coords.append(len(coord))
         if save_in_different_files:
             pink_bin_file = hda_fits.write_mosaic_objects_to_pink_file_v2(filepath=filepath + f"{i}.bin",
                                                                           coordinates=coord,hdu=hdu,
                                                                           image_size=image_size, 
                                                                           min_max_scale=min_max_scale)
         else:
-            pink_bin_file = hda_fits.write_mosaic_objects_to_pink_file_v2(filepath=filepath + f"all_objects_pink.bin",
+            pink_bin_file = hda_fits.write_mosaic_objects_to_pink_file_v2(filepath=filepath + "all_objects_pink.bin",
                                                                           coordinates=coord,hdu=hdu,
                                                                           image_size=image_size, 
                                                                           min_max_scale=min_max_scale)
-      
+            total_number_coords = sum(list_of_num_coords)
+            write_pink_file_v2_header(filepath=filepath + "all_objects_pink.bin",number_of_images=total_number_coords,
+                                                                                image_height=image_size.image_height,
+                                                                                image_width=image_size.image_width,
+                                                                                overwrite=True)
+                                                                        
