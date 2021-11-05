@@ -82,7 +82,7 @@ def write_mosaic_objects_to_pink_file_v2(
 
     log.debug(f"Wrote {number_of_images} images to {filepath}")
 
-    return filepath
+    return number_of_images
 
 def write_all_objects_pink_file_v2(
     catalog_path: str,
