@@ -111,8 +111,7 @@ def write_all_objects_pink_file_v2(
                                                                           coordinates=coord,hdu=hdu,
                                                                           image_size=image_size, 
                                                                           min_max_scale=min_max_scale)
-            total_number_coords = sum(list_of_num_coords)
-            write_pink_file_v2_header(filepath=filepath + "all_objects_pink.bin",number_of_images=total_number_coords,
+            write_pink_file_v2_header(filepath=filepath + "all_objects_pink.bin",number_of_images=number_of_images,
                                                                                 image_height=image_size.image_height,
                                                                                 image_width=image_size.image_width,
                                                                                 overwrite=True)
