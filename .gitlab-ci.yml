@@ -26,7 +26,7 @@ pylint:
   stage: Static Analysis
   allow_failure: true
   script:
-    - pylint -d C0301 ./**/*.py
+    - pylint --disable=all --enable=unused-import ./**/*.py
     # - pylint -d C0301 JeremysCode/*.py (initially from Jeremy)
 
 black:

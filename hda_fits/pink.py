@@ -1,7 +1,7 @@
 """PINK related helper functions
 
 This module provides I/O functionality related to the PINK self
-organizing maps application. 
+organizing maps application.
 """
 import struct
 from typing import List, Union
@@ -113,7 +113,7 @@ def write_all_objects_pink_file_v2(
         table_with_unique_mosaic = catalog[catalog.Mosaic_ID == i]
         coord = table_with_unique_mosaic.loc[:, ["RA", "DEC"]].values.tolist()
         if save_in_different_files:
-            pink_bin_file = hpink.write_mosaic_objects_to_pink_file_v2(
+            hpink.write_mosaic_objects_to_pink_file_v2(
                 filepath=filepath + f"{i}.bin",
                 coordinates=coord,
                 hdu=hdu,
