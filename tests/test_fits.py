@@ -2,7 +2,6 @@ import pytest
 
 from hda_fits import fits,pink
 from hda_fits.logging_config import logging
-from tests.conftest import test_data_dir
 import struct
 
 log = logging.getLogger(__name__)
