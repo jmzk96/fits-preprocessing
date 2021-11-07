@@ -78,9 +78,7 @@ def download_mosaic(mosaic_id: str, path: str = "") -> str:
     return mosaic_filepath
 
 
-def load_mosaic(
-    mosaic_id: str, path: str, download=False
-) -> Optional[List[PrimaryHDU]]:
+def load_mosaic(mosaic_id: str, path: str, download=False) -> Optional[PrimaryHDU]:
     """Load mosaic with mosaic_id from filepath
 
     This function loads the specified mosaic file with `mosaic_id`
@@ -99,7 +97,7 @@ def load_mosaic(
 
     try:
         log.debug(f"Loading {mosaic_filepath}")
-        return fits.open(mosaic_filepath)
+        return fits.open(mosaic_filepath)[0]
     except FileNotFoundError as e:
         log.error(e)
         return None
