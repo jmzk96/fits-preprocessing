@@ -58,13 +58,13 @@ def shimwell_catalog(catalog_filepath):
     return table
 
 @pytest.fixture(scope="module")
-def test_pink_header():
+def test_pink_header(test_data_dir,pink_bin_header):
     path = test_data_dir / pink_bin_header
     assert path.exists()
     return path
 
 @pytest.fixture(scope="module")
-def test_pink_data():
+def test_pink_data(test_data_dir,pink_bin_data):
     path = test_data_dir / pink_bin_data
     assert path.exists()
     return path
