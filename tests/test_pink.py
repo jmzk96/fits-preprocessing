@@ -10,7 +10,7 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
 
-def test_write_square_mosaic_cutout_to_pink_file(
+def test_write_mosaic_objects_to_pink_file_v2_with_square_image_size(
     tmp_path,
     mosaic_hdu_and_wcs,
     example_object_world_coordinates,
@@ -33,7 +33,7 @@ def test_write_square_mosaic_cutout_to_pink_file(
     assert tmp_filepath.exists()
 
 
-def test_write_rectangular_mosaic_cutout_to_pink_file(
+def test_write_mosaic_objects_to_pink_file_v2_with_rectangular_image_size(
     tmp_path,
     mosaic_hdu_and_wcs,
     example_object_world_coordinates,
@@ -57,7 +57,7 @@ def test_write_rectangular_mosaic_cutout_to_pink_file(
     assert os.path.exists(tmp_filepath)
 
 
-def test_write_mosaic_cutout_to_pink_file_coordinates_outside_of_mosaic(
+def test_write_mosaic_objects_to_pink_file_v2_with_coordinate_outside_of_mosaic(
     tmp_path,
     mosaic_hdu_and_wcs,
     example_object_world_coordinates_outside,
