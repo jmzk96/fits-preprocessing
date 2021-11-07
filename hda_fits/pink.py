@@ -43,7 +43,7 @@ def write_mosaic_objects_to_pink_file_v2(
     hdu: PrimaryHDU,
     coordinates: List[WCSCoordinates],
     image_size: Union[int, RectangleSize],
-    min_max_scale: bool = True,
+    min_max_scale: bool = False,
 ) -> int:
     if isinstance(image_size, int):
         image_size = RectangleSize(image_size, image_size)
@@ -59,7 +59,15 @@ def write_mosaic_objects_to_pink_file_v2(
         overwrite=False,
     )
     for coord in coordinates:
-        data = hfits.create_cutout2D_as_flattened_numpy_array(hdu, coord, image_size)
+        try:
+            data = hfits.create_cutout2D_as_flattened_numpy_array(
+                hdu, coord, image_size
+            )
+        except ValueError as e:
+            log.warning(e)
+            log.warning("Image not added to .pink file")
+            number_of_images -= 1
+            continue
 
         if min_max_scale:
             dmax, dmin = data.max(), data.min()

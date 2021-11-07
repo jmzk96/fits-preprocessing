@@ -81,3 +81,8 @@ def mosaic_hdu_and_wcs(mosaic_filepath):
 @pytest.fixture(scope="module")
 def example_object_world_coordinates():
     return WCSCoordinates(207.1492755176664, 55.1906127688414)
+
+
+@pytest.fixture(scope="module")
+def example_object_world_coordinates_outside():
+    return WCSCoordinates(50, 1)
