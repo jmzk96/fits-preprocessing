@@ -13,7 +13,7 @@ stages:
 isort:
   stage: Static Analysis
   script: 
-    - isort ./**/*.py
+    - isort --profile black ./**/*.py
 
 flake8:
   stage: Static Analysis
