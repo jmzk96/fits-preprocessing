@@ -65,7 +65,7 @@ def write_mosaic_objects_to_pink_file_v2(
             )
         except ValueError as e:
             log.warning(e)
-            log.warning("Image not added to .pink file")
+            log.warning(f"Image at coordinates {coord} not added to pink file")
             number_of_images -= 1
             continue
 
@@ -102,14 +102,6 @@ def write_all_objects_pink_file_v2(
     save_in_different_files: bool = True,
     download: bool = False,
 ):
-<<<<<<< HEAD
-    catalog = hfits.read_shimwell_catalog(catalog_path,reduced=True)
-    list_of_mosaics=catalog.Mosaic_ID.unique().tolist()
-    number_of_images = 0
-    for i in list_of_mosaics:
-        mosaic = hfits.load_mosaic(i, output_mosaic_path, download = download)
-        hdu = mosaic[0]
-=======
     if isinstance(image_size, int):
         image_size = RectangleSize(image_height=image_size, image_width=image_size)
 
@@ -118,26 +110,9 @@ def write_all_objects_pink_file_v2(
     number_of_images = 0
     for i in list_of_mosaics:
         hdu = hfits.load_mosaic(i, output_mosaic_path, download=download)
->>>>>>> 029a2a5... Fix type error when using image_size: int
         table_with_unique_mosaic = catalog[catalog.Mosaic_ID == i]
         coord = table_with_unique_mosaic.loc[:, ["RA", "DEC"]].values.tolist()
         if save_in_different_files:
-<<<<<<< HEAD
-            pink_bin_file = hfits.write_mosaic_objects_to_pink_file_v2(filepath=filepath + f"{i}.bin",
-                                                                          coordinates=coord,hdu=hdu,
-                                                                          image_size=image_size, 
-                                                                          min_max_scale=min_max_scale)
-        else:
-            number_of_images += hfits.write_mosaic_objects_to_pink_file_v2(filepath=filepath + "all_objects_pink.bin",
-                                                                          coordinates=coord,hdu=hdu,
-                                                                          image_size=image_size, 
-                                                                          min_max_scale=min_max_scale)
-            write_pink_file_v2_header(filepath=filepath + "all_objects_pink.bin",number_of_images=number_of_images,
-                                                                                image_height=image_size.image_height,
-                                                                                image_width=image_size.image_width,
-                                                                                overwrite=True)
-                                                                        
-=======
             pink_bin_file = hpink.write_mosaic_objects_to_pink_file_v2(
                 filepath=filepath + f"{i}.bin",
                 coordinates=coord,
@@ -160,4 +135,3 @@ def write_all_objects_pink_file_v2(
                 image_width=image_size.image_width,
                 overwrite=True,
             )
->>>>>>> 029a2a5... Fix type error when using image_size: int

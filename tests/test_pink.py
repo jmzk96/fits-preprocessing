@@ -2,12 +2,43 @@ import pytest
 import os
 
 import hda_fits as hfits
-from hda_fits.fits import RectangleSize, WCSCoordinates
+from hda_fits import fits, pink
 from hda_fits.logging_config import logging
+import struct
 
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
+
+
+def test_write_pink_file_v2_header(
+    test_pink_header,
+    number_of_images=3,
+    image_height=200,
+    image_width=200,
+    overwrite=True,
+):
+    pink.write_pink_file_v2_header(
+        test_pink_header, number_of_images, image_height, image_width, overwrite
+    )
+    with open(test_pink_header, "r+b") as g:
+        content = g.read()
+        assert content == struct.pack("i" * 8, 2, 0, 0, 3, 0, 2, 200, 200)
+
+
+def test_write_pink_file_v2_data(
+    test_pink_data, mosaic_hdu_and_wcs, example_object_world_coordinates
+):
+    hdu, wcs = mosaic_hdu_and_wcs
+    example_array = fits.create_cutout2D_as_flattened_numpy_array(
+        hdu, example_object_world_coordinates, 20, wcs
+    )
+    pink.write_pink_file_v2_data(test_pink_data, example_array)
+    with open(test_pink_data, "r+b") as g:
+        content = g.read()
+        assert content == struct.pack(
+            "%sf" % example_array.size, *example_array.tolist()
+        )
 
 
 def test_write_mosaic_objects_to_pink_file_v2_with_square_image_size(
@@ -41,7 +72,7 @@ def test_write_mosaic_objects_to_pink_file_v2_with_rectangular_image_size(
 
     c1 = example_object_world_coordinates
 
-    hdu, wcs = mosaic_hdu_and_wcs
+    hdu, _ = mosaic_hdu_and_wcs
     tmp_filepath = tmp_path / "test_file.pink"
 
     assert not tmp_filepath.exists()
@@ -50,7 +81,7 @@ def test_write_mosaic_objects_to_pink_file_v2_with_rectangular_image_size(
         filepath=tmp_filepath,
         hdu=hdu,
         coordinates=[c1, c1, c1],
-        image_size=RectangleSize(image_height=20, image_width=10),
+        image_size=fits.RectangleSize(image_height=20, image_width=10),
     )
 
     assert number_of_written_images == 3
