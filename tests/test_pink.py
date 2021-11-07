@@ -12,29 +12,47 @@ log.setLevel(logging.INFO)
 
 
 def test_write_pink_file_v2_header(
-    test_pink_header,
+    tmp_path,
+    pink_bin_header,
     number_of_images=3,
     image_height=200,
     image_width=200,
-    overwrite=True,
 ):
+    tmp_filepath = tmp_path / pink_bin_header
+
     pink.write_pink_file_v2_header(
-        test_pink_header, number_of_images, image_height, image_width, overwrite
+        tmp_filepath, number_of_images, image_height, image_width, overwrite=False
     )
-    with open(test_pink_header, "r+b") as g:
+    with open(tmp_filepath, "r+b") as g:
         content = g.read()
-        assert content == struct.pack("i" * 8, 2, 0, 0, 3, 0, 2, 200, 200)
+        assert content == struct.pack(
+            "i" * 8, 2, 0, 0, number_of_images, 0, 2, 200, 200
+        )
+
+    new_number_of_images = number_of_images + 2
+
+    pink.write_pink_file_v2_header(
+        tmp_filepath, new_number_of_images, image_height, image_width, overwrite=True
+    )
+    with open(tmp_filepath, "r+b") as g:
+        content = g.read()
+        assert content == struct.pack(
+            "i" * 8, 2, 0, 0, new_number_of_images, 0, 2, 200, 200
+        )
 
 
 def test_write_pink_file_v2_data(
-    test_pink_data, mosaic_hdu_and_wcs, example_object_world_coordinates
+    tmp_path, pink_bin_data, mosaic_hdu_and_wcs, example_object_world_coordinates
 ):
     hdu, wcs = mosaic_hdu_and_wcs
     example_array = fits.create_cutout2D_as_flattened_numpy_array(
         hdu, example_object_world_coordinates, 20, wcs
     )
-    pink.write_pink_file_v2_data(test_pink_data, example_array)
-    with open(test_pink_data, "r+b") as g:
+
+    tmp_filepath = tmp_path / pink_bin_data
+
+    pink.write_pink_file_v2_data(tmp_filepath, example_array)
+    with open(tmp_filepath, "r+b") as g:
         content = g.read()
         assert content == struct.pack(
             "%sf" % example_array.size, *example_array.tolist()
