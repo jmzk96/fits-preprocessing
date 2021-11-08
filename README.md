@@ -15,7 +15,8 @@ installiert werden und lässt sich nun durch
 import hda_fits
 ```
 
-importieren.
+importieren. 
+
 
 ## Beispiel Use-Case
 
@@ -55,7 +56,39 @@ hf.write_mosaic_objects_to_pink_file_v2(
 )
 ```
 
+# Entwicklung
 
+Es werden bei der Installation von `hda_fits` via
+
+```
+pip install .
+```
+
+oder
+
+```
+python setup.py install
+```
+
+auch die in `requirements_dev.txt` spezifizierten
+Dependencies installiert. Nach der Installation der Library und zugehörigen 
+Dependencies sollte weiterhin folgender Befehl ausgeführt werden:
+
+```
+pre-commit install
+```
+
+Dieser Befehl installiert die in `.pre-commit-config.yaml` spezifizierten Hooks, die
+beim Ausführen von `git commit` und `git push` prüfen, ob der Code grundsätzlichen
+Code-Qualitätsstandards entspricht.
+
+Falls dem nicht so ist, bekommt man die Fehlerbeschreibung und 
+die Dateien und Zeilen angezeigt, die noch verbesserungswürdig sind 
+und der Commit schlägt fehl. Man muss daraufhin die Zeilen verbessern und kann
+dann den Commit erfolgreich durchführen.
+
+
+# Weitere Informationen
 
 ## Mosaic-Daten `P200+55` bezogen von
 
