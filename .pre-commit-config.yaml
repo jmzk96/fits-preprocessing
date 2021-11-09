@@ -1,0 +1,27 @@
+repos:
+  - repo: https://github.com/psf/black
+    rev: 21.9b0
+    hooks:
+      - id: black
+        exclude: (^docs/|^data/)
+
+  - repo: https://github.com/pycqa/isort
+    rev: 5.9.3
+    hooks:
+      - id: isort
+        exclude: (^docs/|^data/)
+        args: ["--profile", "black", "--filter-files"]
+
+  - repo: https://github.com/pycqa/flake8
+    rev: 4.0.1
+    hooks:
+      - id: flake8
+        exclude: (^docs/|^data/)
+        args: ["--max-line-length=130"]
+
+  - repo: https://github.com/pre-commit/mirrors-pylint
+    rev: v3.0.0a3
+    hooks:
+      - id: pylint
+        exclude: (^docs/|^data/)
+        args: [--disable=all, --enable=unused-import, "-d", "C0301"]

@@ -6,7 +6,7 @@ meta information as well as creating 2D cutouts of objects of
 interest.
 """
 import os
-from typing import List, NamedTuple, Optional, Union
+from typing import NamedTuple, Optional, Union
 
 import numpy as np
 import pandas as pd
