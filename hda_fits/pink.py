@@ -44,6 +44,7 @@ def write_mosaic_objects_to_pink_file_v2(
     coordinates: List[WCSCoordinates],
     image_size: Union[int, RectangleSize],
     min_max_scale: bool = False,
+    fill_nan=False,
 ) -> int:
     if isinstance(image_size, int):
         image_size = RectangleSize(image_size, image_size)
@@ -63,6 +64,8 @@ def write_mosaic_objects_to_pink_file_v2(
             data = hfits.create_cutout2D_as_flattened_numpy_array(
                 hdu, coord, image_size
             )
+            if np.isnan(data).any() and not fill_nan:
+                raise ValueError("Objects data array contains NaNs")
         except ValueError as e:
             log.warning(e)
             log.warning(f"Image at coordinates {coord} not added to pink file")
