@@ -110,7 +110,7 @@ def get_sizes_of_objects(mosaic_id, mosaic_path, catalog_path):
         0
     ].header
     cdelt = mosaic_header["CDELT1"]
-    if cdelt < 1:
+    if cdelt < 1.0:
         cdelt = cdelt * -1.0
     # convert arcsec to degrees, then convert degrees to pixels
     catalog[["Maj", "Min", "E_Maj", "E_Min"]] = catalog[
