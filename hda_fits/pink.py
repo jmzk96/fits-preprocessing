@@ -96,7 +96,7 @@ def write_mosaic_objects_to_pink_file_v2(
 def write_all_objects_pink_file_v2(
     catalog_path: str,
     filepath: str,
-    output_mosaic_path: str,
+    mosaic_path: str,
     image_size: Union[int, RectangleSize],
     min_max_scale: bool = True,
     save_in_different_files: bool = True,
@@ -109,7 +109,7 @@ def write_all_objects_pink_file_v2(
     list_of_mosaics = catalog.Mosaic_ID.unique().tolist()
     number_of_images = 0
     for i in list_of_mosaics:
-        hdu = hfits.load_mosaic(i, output_mosaic_path, download=download)
+        hdu = hfits.load_mosaic(i, mosaic_path, download=download)
         table_with_unique_mosaic = catalog[catalog.Mosaic_ID == i]
         coord = table_with_unique_mosaic.loc[:, ["RA", "DEC"]].values.tolist()
         if save_in_different_files:

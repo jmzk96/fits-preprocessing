@@ -103,6 +103,32 @@ def load_mosaic(mosaic_id: str, path: str, download=False) -> Optional[PrimaryHD
         return None
 
 
+def get_sizes_of_objects(mosaic_id, mosaic_path, catalog_path):
+    catalog = read_shimwell_catalog(catalog_path)
+    catalog = catalog[(catalog.Mosaic_ID.str.contains(mosaic_id))]
+    mosaic_header = load_mosaic(mosaic_id=mosaic_id, path=mosaic_path, download=True)[
+        0
+    ].header
+    cdelt = mosaic_header["CDELT1"]
+    if cdelt < 1:
+        cdelt = cdelt * -1.0
+    # convert arcsec to degrees, then convert degrees to pixels
+    catalog[["Maj", "Min", "E_Maj", "E_Min"]] = catalog[
+        ["Maj", "Min", "E_Maj", "E_Min"]
+    ].apply(lambda x: x * 1 / 3600 * 1 / cdelt)
+    # add padding for object
+    catalog["Maj"] = catalog["Maj"] + catalog["E_Maj"]
+    catalog["Min"] = catalog["Min"] + catalog["E_Min"]
+    list_of_sizes = list()
+    for size in catalog[["Maj", "Min"]].values.tolist():
+        maj = size[0]
+        image_size = RectangleSize(
+            maj, maj
+        )  # get maximum size of ellipse, in this case Maj
+        list_of_sizes.append(image_size)
+    return mosaic_id, list_of_sizes, len(list_of_sizes)
+
+
 def create_cutout2D(
     hdu: PrimaryHDU,
     coordinates: WCSCoordinates,
