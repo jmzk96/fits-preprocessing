@@ -104,6 +104,28 @@ def load_mosaic(mosaic_id: str, path: str, download=False) -> Optional[PrimaryHD
 
 
 def get_sizes_of_objects(mosaic_id, mosaic_path, catalog_path):
+    """
+    Get coordinates and sizes based on information in catalogue
+
+    This function accepts a id for a mosaic as given by the FITS catalogue, it also
+    accepts path to the mosaic file and the path to FITS catalogue file. The coordinates
+    and the sizes of the objects are then retrieved and turned into WSCoordinates amd
+    RectangleSize instances respectively. the list of WSCoordinates and list of RectangleSize
+    are returned
+
+    Parameters:
+        mosaic_id (str): Mosaic ID to look for in FITS catalogue to list out its object coordinates
+        and object sizes.
+        mosaic_path (str): File path to FITS Mosaic file.
+        catalog_path (str): File path to FITS Catalogue file.
+
+    Returns:
+        list_of_coordinates (List[WSCoordinates]): List of WSCoordinates instances of RA and DEC coordinates
+        of mosaic objects.
+        list_of_sizes (List[RectangleSize]): List of RectangleSize instances of Maj Sizes of objects (Maj because
+        it is the biggest dimension for an ellipse)
+
+    """
     catalog = read_shimwell_catalog(catalog_path)
     catalog = catalog[(catalog.Mosaic_ID.str.contains(mosaic_id))]
     mosaic_header = load_mosaic(mosaic_id=mosaic_id, path=mosaic_path, download=True)[
@@ -119,14 +141,22 @@ def get_sizes_of_objects(mosaic_id, mosaic_path, catalog_path):
     # add padding for object
     catalog["Maj"] = catalog["Maj"] + catalog["E_Maj"]
     catalog["Min"] = catalog["Min"] + catalog["E_Min"]
-    list_of_sizes = list()
-    for size in catalog[["Maj", "Min"]].values.tolist():
-        maj = size[0]
-        image_size = RectangleSize(
-            maj, maj
-        )  # get maximum size of ellipse, in this case Maj
-        list_of_sizes.append(image_size)
-    return mosaic_id, list_of_sizes, len(list_of_sizes)
+    list_of_coordinates = list(
+        map(
+            WCSCoordinates,
+            np.array(catalog[["RA", "DEC"]].values.tolist())[:, 0],
+            np.array(catalog[["RA", "DEC"]].values.tolist())[:, 1],
+        )
+    )
+    list_of_sizes = list(
+        map(
+            RectangleSize,
+            np.array(catalog[["Maj", "Maj"]].values.tolist())[:, 0],
+            np.array(catalog[["Maj", "Maj"]].values.tolist())[:, 1],
+        )
+    )
+
+    return list_of_coordinates, list_of_sizes
 
 
 def create_cutout2D(
