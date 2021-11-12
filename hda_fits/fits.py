@@ -103,6 +103,55 @@ def load_mosaic(mosaic_id: str, path: str, download=False) -> Optional[PrimaryHD
         return None
 
 
+def get_sizes_of_objects(mosaic_id, mosaic_path, catalog_path, type_list):
+    """
+    Gets mosaic header and catalog and also list of types S, M and C, outputs list
+    of WSCoordiantes and RectangleSizes of objects
+    """
+    catalog = read_shimwell_catalog(catalog_path)
+    type_condition = "|".join(type_list)
+    catalog_subset = catalog[
+        (catalog.Mosaic_ID.str.contains(mosaic_id))
+        & (catalog.S_Code.str.contains(type_condition, regex=True))
+    ]
+    mosaic_header = load_mosaic(mosaic_id=mosaic_id, path=mosaic_path, download=True)
+    return get_sizes_of_object_selection(mosaic_header, catalog_subset)
+
+
+def get_sizes_of_object_selection(mosaic_header, catalog):
+    """
+    Gets WSCoordinates and RectangleSizes of Objects based on information in mosaic_header and catalog
+
+    """
+
+    cdelt = mosaic_header["CDELT1"]
+    if cdelt < 1.0:
+        cdelt = cdelt * -1.0
+    # convert arcsec to degrees, then convert degrees to pixels
+    catalog[["Maj", "Min", "E_Maj", "E_Min"]] = catalog[
+        ["Maj", "Min", "E_Maj", "E_Min"]
+    ].apply(lambda x: x * 1 / 3600 * 1 / cdelt)
+    # add padding for object
+    catalog["Maj"] = catalog["Maj"] + catalog["E_Maj"]
+    catalog["Min"] = catalog["Min"] + catalog["E_Min"]
+    list_of_coordinates = list(
+        map(
+            WCSCoordinates,
+            np.array(catalog[["RA", "DEC"]].values.tolist())[:, 0],
+            np.array(catalog[["RA", "DEC"]].values.tolist())[:, 1],
+        )
+    )
+    list_of_sizes = list(
+        map(
+            RectangleSize,
+            np.array(catalog[["Maj", "Maj"]].values.tolist())[:, 0],
+            np.array(catalog[["Maj", "Maj"]].values.tolist())[:, 1],
+        )
+    )
+
+    return list_of_coordinates, list_of_sizes
+
+
 def create_cutout2D(
     hdu: PrimaryHDU,
     coordinates: WCSCoordinates,
