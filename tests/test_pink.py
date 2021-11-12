@@ -124,3 +124,48 @@ def test_write_mosaic_objects_to_pink_file_v2_with_coordinate_outside_of_mosaic(
 
     assert number_of_written_images == 0
     assert os.path.exists(tmp_filepath)
+
+
+def test_write_mosaic_objects_to_pink_file_v2_with_image_containing_nan(
+    tmp_path,
+    mosaic_hdu_and_wcs_with_nan,
+    example_object_world_coordinates,
+):
+
+    hdu, wcs = mosaic_hdu_and_wcs_with_nan
+    tmp_filepath = tmp_path / "test_file.pink"
+
+    assert not tmp_filepath.exists()
+
+    number_of_written_images = hfits.write_mosaic_objects_to_pink_file_v2(
+        filepath=tmp_filepath,
+        hdu=hdu,
+        coordinates=[example_object_world_coordinates],
+        image_size=20,
+    )
+
+    assert number_of_written_images == 0
+    assert os.path.exists(tmp_filepath)
+
+
+def test_write_mosaic_objects_to_pink_file_v2_with_image_containing_nan_fill_nans(
+    tmp_path,
+    mosaic_hdu_and_wcs_with_nan,
+    example_object_world_coordinates,
+):
+
+    hdu, _ = mosaic_hdu_and_wcs_with_nan
+    tmp_filepath = tmp_path / "test_file.pink"
+
+    assert not tmp_filepath.exists()
+
+    number_of_written_images = hfits.write_mosaic_objects_to_pink_file_v2(
+        filepath=tmp_filepath,
+        hdu=hdu,
+        coordinates=[example_object_world_coordinates],
+        image_size=20,
+        fill_nan=True,
+    )
+
+    assert number_of_written_images == 1
+    assert os.path.exists(tmp_filepath)
