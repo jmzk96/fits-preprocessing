@@ -114,7 +114,7 @@ def get_sizes_of_objects(mosaic_id, mosaic_path, catalog_path, type_list):
         (catalog.Mosaic_ID.str.contains(mosaic_id))
         & (catalog.S_Code.str.contains(type_condition, regex=True))
     ]
-    mosaic_header = load_mosaic(mosaic_id=mosaic_id, path=mosaic_path, download=True)[0]
+    mosaic_header = load_mosaic(mosaic_id=mosaic_id, path=mosaic_path, download=True)
     return get_sizes_of_object_selection(mosaic_header, catalog_subset)
 
 
