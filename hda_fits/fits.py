@@ -103,34 +103,27 @@ def load_mosaic(mosaic_id: str, path: str, download=False) -> Optional[PrimaryHD
         return None
 
 
-def get_sizes_of_objects(mosaic_id, mosaic_path, catalog_path):
+def get_sizes_of_objects(mosaic_id, mosaic_path, catalog_path, type_list):
     """
-    Get coordinates and sizes based on information in catalogue
-
-    This function accepts a id for a mosaic as given by the FITS catalogue, it also
-    accepts path to the mosaic file and the path to FITS catalogue file. The coordinates
-    and the sizes of the objects are then retrieved and turned into WSCoordinates amd
-    RectangleSize instances respectively. the list of WSCoordinates and list of RectangleSize
-    are returned
-
-    Parameters:
-        mosaic_id (str): Mosaic ID to look for in FITS catalogue to list out its object coordinates
-        and object sizes.
-        mosaic_path (str): File path to FITS Mosaic file.
-        catalog_path (str): File path to FITS Catalogue file.
-
-    Returns:
-        list_of_coordinates (List[WSCoordinates]): List of WSCoordinates instances of RA and DEC coordinates
-        of mosaic objects.
-        list_of_sizes (List[RectangleSize]): List of RectangleSize instances of Maj Sizes of objects (Maj because
-        it is the biggest dimension for an ellipse)
-
+    Gets mosaic header and catalog and also list of types S, M and C, outputs list
+    of WSCoordiantes and RectangleSizes of objects
     """
     catalog = read_shimwell_catalog(catalog_path)
-    catalog = catalog[(catalog.Mosaic_ID.str.contains(mosaic_id))]
-    mosaic_header = load_mosaic(mosaic_id=mosaic_id, path=mosaic_path, download=True)[
-        0
-    ].header
+    type_condition = "|".join(type_list)
+    catalog_subset = catalog[
+        (catalog.Mosaic_ID.str.contains(mosaic_id))
+        & (catalog.S_Code.str.contains(type_condition, regex=True))
+    ]
+    mosaic_header = load_mosaic(mosaic_id=mosaic_id, path=mosaic_path, download=True)[0]
+    return get_sizes_of_object_selection(mosaic_header, catalog_subset)
+
+
+def get_sizes_of_object_selection(mosaic_header, catalog):
+    """
+    Gets WSCoordinates and RectangleSizes of Objects based on information in mosaic_header and catalog
+
+    """
+
     cdelt = mosaic_header["CDELT1"]
     if cdelt < 1.0:
         cdelt = cdelt * -1.0
