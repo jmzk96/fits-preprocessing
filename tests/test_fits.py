@@ -10,8 +10,8 @@ def test_read_shimwell_catalog(catalog_filepath):
     assert catalog is not None
 
 
-def test_load_mosaic(mosaic_id, test_data_dir):
-    catalog = fits.load_mosaic(mosaic_id=mosaic_id, path=test_data_dir)
+def test_load_mosaic(mosaic_id, test_mosaic_dir):
+    catalog = fits.load_mosaic(mosaic_id=mosaic_id, path=test_mosaic_dir)
     assert catalog is not None
 
 

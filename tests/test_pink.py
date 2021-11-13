@@ -169,3 +169,41 @@ def test_write_mosaic_objects_to_pink_file_v2_with_image_containing_nan_fill_nan
 
     assert number_of_written_images == 1
     assert os.path.exists(tmp_filepath)
+
+
+def test_write_catalog_to_pink_file_full_image_95px(
+    tmp_path, test_mosaic_dir, catalog_p205_p218_full_95px
+):
+
+    tmp_filepath = tmp_path / "test_file.pink"
+
+    assert not tmp_filepath.exists()
+
+    number_of_images = hfits.write_catalog_objects_pink_file_v2(
+        filepath=tmp_filepath,
+        catalog=catalog_p205_p218_full_95px,
+        mosaic_path=test_mosaic_dir,
+        image_size=95,
+    )
+
+    assert tmp_filepath.exists()
+    assert number_of_images == 5
+
+
+def test_write_catalog_to_pink_file_with_partial_images_95px(
+    tmp_path, test_mosaic_dir, catalog_p205_p218_95px
+):
+
+    tmp_filepath = tmp_path / "test_file.pink"
+
+    assert not tmp_filepath.exists()
+
+    number_of_images = hfits.write_catalog_objects_pink_file_v2(
+        filepath=tmp_filepath,
+        catalog=catalog_p205_p218_95px,
+        mosaic_path=test_mosaic_dir,
+        image_size=95,
+    )
+
+    assert tmp_filepath.exists()
+    assert number_of_images == 5
