@@ -7,11 +7,12 @@ import struct
 from typing import List, Union
 
 import numpy as np
+import pandas as pd
 from astropy.io.fits.hdu.image import PrimaryHDU
 
 import hda_fits.fits as hfits
 import hda_fits.pink as hpink
-from hda_fits.fits import RectangleSize, WCSCoordinates
+from hda_fits.fits import RectangleSize, WCSCoordinates, load_mosaic
 from hda_fits.logging_config import logging
 
 log = logging.getLogger(__name__)
@@ -141,3 +142,49 @@ def write_all_objects_pink_file_v2(
                 image_width=image_size.image_width,
                 overwrite=True,
             )
+
+
+def write_catalog_objects_pink_file_v2(
+    filepath: str,
+    catalog: pd.DataFrame,
+    mosaic_path: str,
+    image_size: Union[int, RectangleSize],
+    min_max_scale: bool = False,
+    download: bool = False,
+    fill_nan: bool = False,
+):
+
+    if isinstance(image_size, int):
+        image_size = RectangleSize(image_height=image_size, image_width=image_size)
+
+    mosaic_ids = catalog["Mosaic_ID"].unique().tolist()
+
+    number_of_images = 0
+
+    for mosaic_id in mosaic_ids:
+        hdu = load_mosaic(mosaic_id=mosaic_id, path=mosaic_path, download=download)
+
+        coordinates = catalog[catalog["Mosaic_ID"] == mosaic_id][
+            ["RA", "DEC"]
+        ].values.tolist()
+
+        number_of_images_current = write_mosaic_objects_to_pink_file_v2(
+            filepath=filepath,
+            hdu=hdu,
+            coordinates=coordinates,
+            image_size=image_size,
+            min_max_scale=min_max_scale,
+            fill_nan=fill_nan,
+        )
+
+        number_of_images += number_of_images_current
+
+    write_pink_file_v2_header(
+        filepath=filepath,
+        number_of_images=number_of_images,
+        image_height=image_size.image_height,
+        image_width=image_size.image_width,
+        overwrite=True,
+    )
+
+    return number_of_images
