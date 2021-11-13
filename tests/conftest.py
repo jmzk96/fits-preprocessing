@@ -1,11 +1,15 @@
 from pathlib import Path
 
+import numpy as np
 import pytest
 from astropy.io import fits
 from astropy.table import Table
 from astropy.wcs import WCS
 
 from hda_fits.fits import WCSCoordinates
+from hda_fits.logging_config import logging
+
+log = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope="module")
@@ -71,8 +75,22 @@ def mosaic_hdu_and_wcs(mosaic_filepath):
 
 
 @pytest.fixture(scope="module")
+def mosaic_hdu_and_wcs_with_nan(mosaic_hdu_and_wcs, example_object_pixel_coordinates):
+    hdu, wcs = mosaic_hdu_and_wcs
+    hdu_nan = hdu.copy()
+    hdu_nan.data[example_object_pixel_coordinates] = np.nan
+    assert np.isnan(hdu_nan.data).any()
+    return hdu_nan, wcs
+
+
+@pytest.fixture(scope="module")
 def example_object_world_coordinates():
     return WCSCoordinates(207.1492755176664, 55.1906127688414)
+
+
+@pytest.fixture(scope="module")
+def example_object_pixel_coordinates():
+    return (300, 300)
 
 
 @pytest.fixture(scope="module")
