@@ -86,6 +86,7 @@ def write_mosaic_objects_to_pink_file_v2(
             log.warning(
                 f"Data was truncated. Expected {number_of_pixels}, got {data.size} floats."
             )
+            log.warning(f"Image at coordinates {coord} not added to pink file")
             number_of_images -= 1
             write_pink_file_v2_header(
                 filepath=filepath,
@@ -95,7 +96,7 @@ def write_mosaic_objects_to_pink_file_v2(
                 overwrite=True,
             )
 
-    log.debug(f"Wrote {number_of_images} images to {filepath}")
+    log.info(f"Wrote {number_of_images} images to {filepath}")
 
     return number_of_images
 
@@ -153,6 +154,11 @@ def write_catalog_objects_pink_file_v2(
     download: bool = False,
     fill_nan: bool = False,
 ):
+    """
+    Writes all images in a given catalog to a binary file in PINK v2 format.
+    This includes loading (and optionally downloading) each required mosaic
+    and updating the sum of written images at the end.
+    """
 
     if isinstance(image_size, int):
         image_size = RectangleSize(image_height=image_size, image_width=image_size)

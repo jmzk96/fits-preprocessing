@@ -161,6 +161,7 @@ def sources_p205_p218_full_95px(
     )
 
 
+@pytest.fixture(scope="module")
 def sources_p205_p218_partial_95px(
     sources_closest_to_205_center_partial_95px,
     sources_closest_to_218_center_partial_95px,
