@@ -82,7 +82,7 @@ def shimwell_catalog(catalog_filepath):
 def shimwell_catalog_df(catalog_filepath, shimwell_catalog):
     catalog = hf.read_shimwell_catalog(catalog_filepath)
     assert catalog is not None
-    assert catalog.shape == shimwell_catalog.shape
+    assert catalog.shape == shimwell_catalog.to_pandas().shape
     return catalog
 
 
@@ -99,19 +99,23 @@ def mosaic_hdu_and_wcs(mosaic_filepath):
 def mosaic_hdu_and_wcs_with_nan(mosaic_hdu_and_wcs, example_object_pixel_coordinates):
     hdu, wcs = mosaic_hdu_and_wcs
     hdu_nan = hdu.copy()
-    hdu_nan.data[example_object_pixel_coordinates] = np.nan
+    hdu_nan.data[tuple(example_object_pixel_coordinates)] = np.nan
     assert np.isnan(hdu_nan.data).any()
     return hdu_nan, wcs
 
 
 @pytest.fixture(scope="module")
 def example_object_world_coordinates():
-    return WCSCoordinates(207.1492755176664, 55.1906127688414)
+    return WCSCoordinates(205.07668792, 54.91164316)
 
 
 @pytest.fixture(scope="module")
-def example_object_pixel_coordinates():
-    return (300, 300)
+def example_object_pixel_coordinates(
+    example_object_world_coordinates, mosaic_hdu_and_wcs
+):
+    _, wcs = mosaic_hdu_and_wcs
+    coords = wcs.wcs_world2pix([example_object_world_coordinates], 0)
+    return coords.astype("int").tolist()
 
 
 @pytest.fixture(scope="module")
@@ -139,11 +143,12 @@ def sources_closest_to_218_center_partial_95px():
 
 @pytest.fixture(scope="module")
 def sources_closest_to_205_center_full_95px():
-    return [
-        "ILTJ134018.41+545441.9",
-        "ILTJ134004.60+545356.5",
-        "ILTJ134006.57+545515.8",
-    ]
+    return ["ILTJ134018.41+545441.9", "ILTJ134004.60+545356.5"]
+
+
+@pytest.fixture(scope="module")
+def sources_closest_to_205_center_partial_95px():
+    return ["ILTJ133940.17+545649.9", "ILTJ134040.88+545808.2"]
 
 
 @pytest.fixture(scope="module")
@@ -156,11 +161,22 @@ def sources_p205_p218_full_95px(
     )
 
 
+def sources_p205_p218_partial_95px(
+    sources_closest_to_205_center_partial_95px,
+    sources_closest_to_218_center_partial_95px,
+):
+    return (
+        sources_closest_to_205_center_partial_95px
+        + sources_closest_to_218_center_partial_95px
+    )
+
+
 @pytest.fixture(scope="module")
 def sources_p205_p218(
-    sources_p205_p218_full_95px, sources_closest_to_218_center_partial_95px
+    sources_p205_p218_full_95px,
+    sources_p205_p218_partial_95px,
 ):
-    return sources_p205_p218_full_95px + sources_closest_to_218_center_partial_95px
+    return sources_p205_p218_full_95px + sources_p205_p218_partial_95px
 
 
 @pytest.fixture(scope="module")
@@ -168,14 +184,14 @@ def catalog_p205_p218_full_95px(sources_p205_p218_full_95px, shimwell_catalog_df
     catalog_subset = shimwell_catalog_df[
         shimwell_catalog_df.Source_Name.isin(sources_p205_p218_full_95px)
     ]
-    assert catalog_subset.shape[0] == 6
+    assert catalog_subset.shape[0] == 5
     return catalog_subset
 
 
 @pytest.fixture(scope="module")
-def catalog_p205_p218_full_and_partial_95px(sources_p205_p218, shimwell_catalog_df):
+def catalog_p205_p218_95px(sources_p205_p218, shimwell_catalog_df):
     catalog_subset = shimwell_catalog_df[
         shimwell_catalog_df.Source_Name.isin(sources_p205_p218)
     ]
-    assert catalog_subset.shape[0] == 9
+    assert catalog_subset.shape[0] == 10
     return catalog_subset
