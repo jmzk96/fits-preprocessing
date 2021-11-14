@@ -46,6 +46,7 @@ def write_mosaic_objects_to_pink_file_v2(
     image_size: Union[int, RectangleSize],
     min_max_scale: bool = False,
     fill_nan=False,
+    overwrite_header=False,
 ) -> int:
     if isinstance(image_size, int):
         image_size = RectangleSize(image_size, image_size)
@@ -58,7 +59,7 @@ def write_mosaic_objects_to_pink_file_v2(
         number_of_images=number_of_images,
         image_height=image_size.image_height,
         image_width=image_size.image_width,
-        overwrite=False,
+        overwrite=overwrite_header,
     )
     for coord in coordinates:
         try:
@@ -164,6 +165,17 @@ def write_catalog_objects_pink_file_v2(
         image_size = RectangleSize(image_height=image_size, image_width=image_size)
 
     mosaic_ids = catalog["Mosaic_ID"].unique().tolist()
+    number_of_images_to_write = catalog.shape[0]
+
+    log.info(f"Going to write {number_of_images_to_write} images")
+
+    write_pink_file_v2_header(
+        filepath=filepath,
+        number_of_images=number_of_images_to_write,
+        image_height=image_size.image_height,
+        image_width=image_size.image_width,
+        overwrite=False,
+    )
 
     number_of_images = 0
 
@@ -181,6 +193,7 @@ def write_catalog_objects_pink_file_v2(
             image_size=image_size,
             min_max_scale=min_max_scale,
             fill_nan=fill_nan,
+            overwrite_header=True,
         )
 
         number_of_images += number_of_images_current
@@ -192,5 +205,7 @@ def write_catalog_objects_pink_file_v2(
         image_width=image_size.image_width,
         overwrite=True,
     )
+
+    log.info(f"Wrote {number_of_images} images to {filepath}.")
 
     return number_of_images
