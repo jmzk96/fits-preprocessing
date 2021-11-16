@@ -142,6 +142,11 @@ def sources_closest_to_218_center_partial_95px():
 
 
 @pytest.fixture(scope="module")
+def type_list():
+    return ["C", "M"]
+
+
+@pytest.fixture(scope="module")
 def first_and_last_4_RectangleSizes():
     return [
         [
