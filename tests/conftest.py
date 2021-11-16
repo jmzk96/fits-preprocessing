@@ -7,7 +7,7 @@ from astropy.table import Table
 from astropy.wcs import WCS
 
 import hda_fits as hf
-from hda_fits.fits import WCSCoordinates
+from hda_fits.fits import RectangleSize, WCSCoordinates
 from hda_fits.logging_config import logging
 
 log = logging.getLogger(__name__)
@@ -138,6 +138,58 @@ def sources_closest_to_218_center_partial_95px():
         "ILTJ143416.01+545700.0",
         "ILTJ143428.48+545728.7",
         "ILTJ143419.81+545616.1",
+    ]
+
+
+@pytest.fixture(scope="module")
+def first_and_last_4_RectangleSizes():
+    return [
+        [
+            RectangleSize(
+                image_height=4.7799646097060045, image_width=4.7799646097060045
+            ),
+            RectangleSize(
+                image_height=4.519641190258223, image_width=4.519641190258223
+            ),
+            RectangleSize(
+                image_height=4.891342053003956, image_width=4.891342053003956
+            ),
+            RectangleSize(
+                image_height=7.692137862465569, image_width=7.692137862465569
+            ),
+        ],
+        [
+            RectangleSize(
+                image_height=71.51529374562816, image_width=71.51529374562816
+            ),
+            RectangleSize(
+                image_height=45.733983926715204, image_width=45.733983926715204
+            ),
+            RectangleSize(
+                image_height=76.97044763491165, image_width=76.97044763491165
+            ),
+            RectangleSize(
+                image_height=56.69196613908916, image_width=56.69196613908916
+            ),
+        ],
+    ]
+
+
+@pytest.fixture(scope="module")
+def first_and_last_4_WCSCoordinates():
+    return [
+        [
+            WCSCoordinates(RA=220.82511725201545, DEC=54.04997453184971),
+            WCSCoordinates(RA=220.8376873437023, DEC=54.34656448042709),
+            WCSCoordinates(RA=220.83929502582853, DEC=54.39477141758409),
+            WCSCoordinates(RA=220.83230210536595, DEC=54.341771796372804),
+        ],
+        [
+            WCSCoordinates(RA=204.49837507932645, DEC=55.01845918082531),
+            WCSCoordinates(RA=204.06229187320707, DEC=54.78647469721186),
+            WCSCoordinates(RA=203.41760285716038, DEC=54.02772536519059),
+            WCSCoordinates(RA=203.14130732613486, DEC=54.32427759709343),
+        ],
     ]
 
 
