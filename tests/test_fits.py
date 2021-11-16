@@ -69,7 +69,7 @@ def test_get_correct_catalog_subset(
         mosaic_id, test_mosaic_dir, catalog_filepath, type_list
     )
     assert catalog_test is not None
-    assert not catalog_test.empty
+    assert not catalog_subset.empty
     assert len(catalog_subset) == len(catalog_test[0])
     assert len(catalog_subset) == len(catalog_test[1])
 
