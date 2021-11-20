@@ -11,7 +11,6 @@ import pandas as pd
 from astropy.io.fits.hdu.image import PrimaryHDU
 
 import hda_fits.fits as hfits
-import hda_fits.pink as hpink
 from hda_fits.fits import RectangleSize, WCSCoordinates, load_mosaic
 from hda_fits.logging_config import logging
 
@@ -19,19 +18,61 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 
-def write_pink_file_v2_header(
+def write_pink_file_header(
     filepath: str,
     number_of_images: int,
     image_height: int,
     image_width: int,
     overwrite: bool = False,
+    version: str = "v2",
 ):
-    with open(filepath, "r+b" if overwrite else "wb") as f:
-        f.write(
-            struct.pack(
-                "i" * 8, 2, 0, 0, number_of_images, 0, 2, image_height, image_width
+    if version == "v2":
+        with open(filepath, "r+b" if overwrite else "wb") as f:
+            f.write(
+                struct.pack(
+                    "i" * 8, 2, 0, 0, number_of_images, 0, 2, image_height, image_width
+                )
             )
-        )
+    elif version == "v1":
+        with open(filepath, "r+b" if overwrite else "wb") as f:
+            f.write(
+                struct.pack("i" * 4, number_of_images, 1, image_width, image_height)
+            )
+
+
+def convert_pink_file_header_v1_v2(filepath: str, v1_to_v2: bool = False):
+    if v1_to_v2:
+        with open(filepath, "rb") as file:
+            (
+                number_of_images,
+                number_of_channels,
+                image_width,
+                image_height,
+            ) = struct.unpack("i" * 4, file.read(4 * 4))
+            write_pink_file_header(
+                filepath=filepath,
+                number_of_images=number_of_images,
+                image_height=image_height,
+                image_width=image_width,
+                overwrite=True,
+                version="v2",
+            )
+    else:
+        with open(filepath, "rb") as file:
+            list_of_parameters = struct.unpack("i" * 8, file.read(4 * 8))
+            number_of_images, image_height, image_width = (
+                list_of_parameters[3],
+                list_of_parameters[6],
+                list_of_parameters[7],
+            )
+            write_pink_file_header(
+                filepath=filepath,
+                number_of_images=number_of_images,
+                image_height=image_height,
+                image_width=image_width,
+                overwrite=True,
+                version="v1",
+            )
 
 
 def write_pink_file_v2_data(filepath, data: np.ndarray):
@@ -54,7 +95,7 @@ def write_mosaic_objects_to_pink_file_v2(
     number_of_pixels = image_size.image_height * image_size.image_width
     number_of_images = len(coordinates)
 
-    write_pink_file_v2_header(
+    write_pink_file_header(
         filepath=filepath,
         number_of_images=number_of_images,
         image_height=image_size.image_height,
@@ -89,7 +130,7 @@ def write_mosaic_objects_to_pink_file_v2(
             )
             log.warning(f"Image at coordinates {coord} not added to pink file")
             number_of_images -= 1
-            write_pink_file_v2_header(
+            write_pink_file_header(
                 filepath=filepath,
                 number_of_images=number_of_images,
                 image_height=image_size.image_height,
@@ -122,7 +163,7 @@ def write_all_objects_pink_file_v2(
         table_with_unique_mosaic = catalog[catalog.Mosaic_ID == i]
         coord = table_with_unique_mosaic.loc[:, ["RA", "DEC"]].values.tolist()
         if save_in_different_files:
-            hpink.write_mosaic_objects_to_pink_file_v2(
+            write_mosaic_objects_to_pink_file_v2(
                 filepath=filepath + f"{i}.bin",
                 coordinates=coord,
                 hdu=hdu,
@@ -130,14 +171,14 @@ def write_all_objects_pink_file_v2(
                 min_max_scale=min_max_scale,
             )
         else:
-            number_of_images += hpink.write_mosaic_objects_to_pink_file_v2(
+            number_of_images += write_mosaic_objects_to_pink_file_v2(
                 filepath=filepath + "all_objects_pink.bin",
                 coordinates=coord,
                 hdu=hdu,
                 image_size=image_size,
                 min_max_scale=min_max_scale,
             )
-            write_pink_file_v2_header(
+            write_pink_file_header(
                 filepath=filepath + "all_objects_pink.bin",
                 number_of_images=number_of_images,
                 image_height=image_size.image_height,
@@ -169,7 +210,7 @@ def write_catalog_objects_pink_file_v2(
 
     log.info(f"Going to write {number_of_images_to_write} images")
 
-    write_pink_file_v2_header(
+    write_pink_file_header(
         filepath=filepath,
         number_of_images=number_of_images_to_write,
         image_height=image_size.image_height,
@@ -198,7 +239,7 @@ def write_catalog_objects_pink_file_v2(
 
         number_of_images += number_of_images_current
 
-    write_pink_file_v2_header(
+    write_pink_file_header(
         filepath=filepath,
         number_of_images=number_of_images,
         image_height=image_size.image_height,
