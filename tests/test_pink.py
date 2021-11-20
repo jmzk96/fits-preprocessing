@@ -9,7 +9,7 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
 
-def test_write_pink_file_v2_header(
+def test_write_pink_file_header(
     tmp_path,
     pink_bin_header,
     number_of_images=3,
@@ -18,7 +18,7 @@ def test_write_pink_file_v2_header(
 ):
     tmp_filepath = tmp_path / pink_bin_header
 
-    pink.write_pink_file_v2_header(
+    pink.write_pink_file_header(
         tmp_filepath, number_of_images, image_height, image_width, overwrite=False
     )
     with open(tmp_filepath, "r+b") as g:
@@ -29,7 +29,7 @@ def test_write_pink_file_v2_header(
 
     new_number_of_images = number_of_images + 2
 
-    pink.write_pink_file_v2_header(
+    pink.write_pink_file_header(
         tmp_filepath, new_number_of_images, image_height, image_width, overwrite=True
     )
     with open(tmp_filepath, "r+b") as g:
@@ -38,7 +38,7 @@ def test_write_pink_file_v2_header(
             "i" * 8, 2, 0, 0, new_number_of_images, 0, 2, 200, 200
         )
 
-    pink.write_pink_file_v2_header(
+    pink.write_pink_file_header(
         tmp_filepath,
         number_of_images,
         image_height,
