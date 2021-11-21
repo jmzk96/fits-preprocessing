@@ -1,6 +1,8 @@
 import os
 import struct
 
+import numpy as np
+
 import hda_fits as hfits
 from hda_fits import fits, pink
 from hda_fits.logging_config import logging
@@ -62,24 +64,46 @@ def test_write_pink_file_header(
         assert content == struct.pack("i" * 4, new_number_of_images, 1, 200, 200)
 
 
-# def test_convert_pink_file_header_v1_v2(
-#     tmp_path, pink_bin_header, number_of_images=3, image_height=200, image_width=200
-# ):
-#     tmp_filepath = tmp_path / pink_bin_header
-#     hdu = hfits.load_mosaic()
-#     pink.convert_pink_file_header_v1_v2(tmp_filepath, v1_to_v2=False)
-#     with open(tmp_filepath, "rb") as f:
-#         content = f.read()
-#         assert content == struct.pack(
-#             "i" * 4, number_of_images, 1, image_width, image_height
-#         )
+def test_convert_pink_file_header_v1_v2(
+    tmp_path,
+    pink_bin_header,
+    mosaic_id,
+    test_mosaic_dir,
+    catalog_filepath,
+    number_of_images=40,
+    image_height=20,
+    image_width=20,
+):
+    tmp_filepath = tmp_path / pink_bin_header
+    hdu = hfits.load_mosaic(mosaic_id, test_mosaic_dir)
+    catalog = hfits.read_shimwell_catalog(catalog_filepath, reduced=True)
+    catalog_subset = catalog[catalog.Mosaic_ID.str.contains("P22Hetdex04")][
+        :number_of_images
+    ]
+    list_of_coordinates = list(
+        map(
+            fits.WCSCoordinates,
+            np.array(catalog_subset[["RA", "DEC"]].values.tolist())[:, 0],
+            np.array(catalog_subset[["RA", "DEC"]].values.tolist())[:, 1],
+        )
+    )
+    hfits.write_mosaic_objects_to_pink_file_v2(
+        tmp_filepath, hdu=hdu, coordinates=list_of_coordinates, image_size=20
+    )
 
-#     pink.convert_pink_file_header_v1_v2(tmp_filepath, v1_to_v2=True)
-#     with open(tmp_filepath, "rb") as f:
-#         content = f.read()
-#         assert content == struct.pack(
-#             "i" * 8, 2, 0, 0, number_of_images, 0, 2, image_height, image_width
-#         )
+    pink.convert_pink_file_header_v1_v2(tmp_filepath, v1_to_v2=False)
+    with open(tmp_filepath, "rb") as f:
+        content = f.read(16)
+        assert content == struct.pack(
+            "i" * 4, number_of_images, 1, image_width, image_height
+        )
+
+    pink.convert_pink_file_header_v1_v2(tmp_filepath, v1_to_v2=True)
+    with open(tmp_filepath, "rb") as f:
+        content = f.read(32)
+        assert content == struct.pack(
+            "i" * 8, 2, 0, 0, number_of_images, 0, 2, image_height, image_width
+        )
 
 
 def test_write_pink_file_v2_data(
