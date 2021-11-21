@@ -49,14 +49,30 @@ def convert_pink_file_header_v1_v2(filepath: str, v1_to_v2: bool = False):
                 image_width,
                 image_height,
             ) = struct.unpack("i" * 4, file.read(4 * 4))
+            try:
+                with open(filepath, "rb") as file:
+                    len_of_file = len(file.read())
+                    file.seek(16)
+                    data = file.read()
+                    log.info(f"Extracted {(len_of_file-16)/4} floats from file")
+            except ValueError as e:
+                log.warning(e)
+                log.warning("No trailing data after header or wrong file format")
+
             write_pink_file_header(
                 filepath=filepath,
                 number_of_images=number_of_images,
                 image_height=image_height,
                 image_width=image_width,
-                overwrite=True,
+                overwrite=False,
                 version="v2",
             )
+            try:
+                with open(filepath, "ab") as file:
+                    file.write(data)
+            except ValueError as e:
+                log.warning(e)
+                log.warning("No trailing data after header")
     else:
         with open(filepath, "rb") as file:
             list_of_parameters = struct.unpack("i" * 8, file.read(4 * 8))
@@ -65,14 +81,29 @@ def convert_pink_file_header_v1_v2(filepath: str, v1_to_v2: bool = False):
                 list_of_parameters[6],
                 list_of_parameters[7],
             )
+            try:
+                with open(filepath, "rb") as file:
+                    len_of_file = len(file.read())
+                    file.seek(32)
+                    data = file.read()
+                    log.info(f"Extracted {(len_of_file-32)/4} floats from file")
+            except ValueError as e:
+                log.warning(e)
+                log.warning("No trailing data after header or wrong file format")
             write_pink_file_header(
                 filepath=filepath,
                 number_of_images=number_of_images,
                 image_height=image_height,
                 image_width=image_width,
-                overwrite=True,
+                overwrite=False,
                 version="v1",
             )
+            try:
+                with open(filepath, "ab") as file:
+                    file.write(data)
+            except ValueError as e:
+                log.warning(e)
+                log.warning("No trailing data after header")
 
 
 def write_pink_file_v2_data(filepath, data: np.ndarray):
