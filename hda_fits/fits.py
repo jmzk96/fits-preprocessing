@@ -185,3 +185,14 @@ def create_cutout2D_as_updated_hdu(
     hdu_cutout.data = cutout.data
     hdu_cutout.header.update(cutout.wcs.to_header())
     return hdu_cutout
+
+def denoise_cutouts(
+        cutout_asnflatparray,
+        sigma=1.5
+):
+  std = np.std(cutout_asnflatparray)
+  max = np.amax(cutout_asnflatparray)
+  threshold = max - sigma * std
+  cutout_asnflatparray[cutout_asnflatparray < threshold] = 0.0
+  return cutout_asnflatparray
+
