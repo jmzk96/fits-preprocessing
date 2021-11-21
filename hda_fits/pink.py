@@ -71,6 +71,7 @@ def write_mosaic_objects_to_pink_file_v2(
                     data = np.nan_to_num(data, 0.0)
                 else:
                     raise ValueError("Objects data array contains NaNs")
+            data = hfits.denoise_cutouts(data)
         except ValueError as e:
             log.warning(e)
             log.warning(f"Image at coordinates {coord} not added to pink file")
