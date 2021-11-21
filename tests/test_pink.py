@@ -77,7 +77,7 @@ def test_convert_pink_file_header_v1_v2(
     tmp_filepath = tmp_path / pink_bin_header
     hdu = hfits.load_mosaic(mosaic_id, test_mosaic_dir)
     catalog = hfits.read_shimwell_catalog(catalog_filepath, reduced=True)
-    catalog_subset = catalog[catalog.Mosaic_ID.str.contains("P22Hetdex04")][
+    catalog_subset = catalog[catalog.Mosaic_ID.str.contains(mosaic_id)][
         :number_of_images
     ]
     list_of_coordinates = list(
