@@ -81,6 +81,9 @@ def test_convert_pink_file_header_v1_v2(
         assert content == struct.pack(
             "i" * 4, number_of_images, 1, image_width, image_height
         )
+    with open(tmp_filepath, "rb") as f:
+        f.seek(16)
+        assert len(f.read()) == 180500
 
     pink.convert_pink_file_header_v1_v2(tmp_filepath, v1_to_v2=True)
     with open(tmp_filepath, "rb") as f:
@@ -88,6 +91,9 @@ def test_convert_pink_file_header_v1_v2(
         assert content == struct.pack(
             "i" * 8, 2, 0, 0, number_of_images, 0, 2, image_height, image_width
         )
+    with open(tmp_filepath, "rb") as f:
+        f.seek(32)
+        assert len(f.read()) == 180500
 
 
 def test_write_pink_file_v2_data(
