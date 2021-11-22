@@ -9,7 +9,7 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
 
-def test_write_pink_file_v2_header(
+def test_write_pink_file_header(
     tmp_path,
     pink_bin_header,
     number_of_images=3,
@@ -17,8 +17,9 @@ def test_write_pink_file_v2_header(
     image_width=200,
 ):
     tmp_filepath = tmp_path / pink_bin_header
+    new_number_of_images = number_of_images + 2
 
-    pink.write_pink_file_v2_header(
+    pink.write_pink_file_header(
         tmp_filepath, number_of_images, image_height, image_width, overwrite=False
     )
     with open(tmp_filepath, "r+b") as g:
@@ -27,9 +28,7 @@ def test_write_pink_file_v2_header(
             "i" * 8, 2, 0, 0, number_of_images, 0, 2, 200, 200
         )
 
-    new_number_of_images = number_of_images + 2
-
-    pink.write_pink_file_v2_header(
+    pink.write_pink_file_header(
         tmp_filepath, new_number_of_images, image_height, image_width, overwrite=True
     )
     with open(tmp_filepath, "r+b") as g:
@@ -37,6 +36,64 @@ def test_write_pink_file_v2_header(
         assert content == struct.pack(
             "i" * 8, 2, 0, 0, new_number_of_images, 0, 2, 200, 200
         )
+
+    pink.write_pink_file_header(
+        tmp_filepath,
+        number_of_images,
+        image_height,
+        image_width,
+        overwrite=False,
+        version="v1",
+    )
+    with open(tmp_filepath, "r+b") as g:
+        content = g.read()
+        assert content == struct.pack("i" * 4, number_of_images, 1, 200, 200)
+
+    pink.write_pink_file_header(
+        tmp_filepath,
+        new_number_of_images,
+        image_height,
+        image_width,
+        overwrite=True,
+        version="v1",
+    )
+    with open(tmp_filepath, "r+b") as g:
+        content = g.read()
+        assert content == struct.pack("i" * 4, new_number_of_images, 1, 200, 200)
+
+
+def test_convert_pink_file_header_v1_v2(
+    tmp_path, catalog_p205_p218_full_95px, test_mosaic_dir
+):
+    tmp_filepath = tmp_path / "test_file.pink"
+    image_height = 95
+    image_width = 95
+    number_of_images = hfits.write_catalog_objects_pink_file_v2(
+        filepath=tmp_filepath,
+        catalog=catalog_p205_p218_full_95px,
+        mosaic_path=test_mosaic_dir,
+        image_size=95,
+    )
+
+    pink.convert_pink_file_header_v2_to_v1(tmp_filepath)
+    with open(tmp_filepath, "rb") as f:
+        content = f.read(16)
+        assert content == struct.pack(
+            "i" * 4, number_of_images, 1, image_width, image_height
+        )
+    with open(tmp_filepath, "rb") as f:
+        f.seek(16)
+        assert len(f.read()) == 180500
+
+    pink.convert_pink_file_header_v1_to_v2(tmp_filepath)
+    with open(tmp_filepath, "rb") as f:
+        content = f.read(32)
+        assert content == struct.pack(
+            "i" * 8, 2, 0, 0, number_of_images, 0, 2, image_height, image_width
+        )
+    with open(tmp_filepath, "rb") as f:
+        f.seek(32)
+        assert len(f.read()) == 180500
 
 
 def test_write_pink_file_v2_data(
