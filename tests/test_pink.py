@@ -1,8 +1,6 @@
 import os
 import struct
 
-import numpy as np
-
 import hda_fits as hfits
 from hda_fits import fits, pink
 from hda_fits.logging_config import logging
@@ -65,30 +63,16 @@ def test_write_pink_file_header(
 
 
 def test_convert_pink_file_header_v1_v2(
-    tmp_path,
-    pink_bin_header,
-    mosaic_id,
-    test_mosaic_dir,
-    catalog_filepath,
-    number_of_images=40,
-    image_height=20,
-    image_width=20,
+    tmp_path, catalog_p205_p218_full_95px, test_mosaic_dir
 ):
-    tmp_filepath = tmp_path / pink_bin_header
-    hdu = hfits.load_mosaic(mosaic_id, test_mosaic_dir)
-    catalog = hfits.read_shimwell_catalog(catalog_filepath, reduced=True)
-    catalog_subset = catalog[catalog.Mosaic_ID.str.contains(mosaic_id, regex=False)][
-        :number_of_images
-    ]
-    list_of_coordinates = list(
-        map(
-            fits.WCSCoordinates,
-            np.array(catalog_subset[["RA", "DEC"]].values.tolist())[:, 0],
-            np.array(catalog_subset[["RA", "DEC"]].values.tolist())[:, 1],
-        )
-    )
-    hfits.write_mosaic_objects_to_pink_file_v2(
-        tmp_filepath, hdu=hdu, coordinates=list_of_coordinates, image_size=20
+    tmp_filepath = tmp_path / "test_file.pink"
+    image_height = 95
+    image_width = 95
+    number_of_images = hfits.write_catalog_objects_pink_file_v2(
+        filepath=tmp_filepath,
+        catalog=catalog_p205_p218_full_95px,
+        mosaic_path=test_mosaic_dir,
+        image_size=95,
     )
 
     pink.convert_pink_file_header_v1_v2(tmp_filepath, v1_to_v2=False)
