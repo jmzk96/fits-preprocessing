@@ -4,7 +4,7 @@ This module provides I/O functionality related to the PINK self
 organizing maps application.
 """
 import struct
-from typing import List, Union
+from typing import BinaryIO, List, Union
 
 import numpy as np
 import pandas as pd
@@ -16,6 +16,22 @@ from hda_fits.logging_config import logging
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
+
+
+def _skip_header_comment(input_stream: BinaryIO):
+    pass
+
+
+def read_pink_file_header(filepath: str):
+    pass
+
+
+def read_pink_file_image(filepath: str, image_number: int):
+    pass
+
+
+def read_pink_file_multiple_images(filepath: str, image_numbers: List[int]):
+    pass
 
 
 def write_pink_file_header(
