@@ -6,7 +6,7 @@ meta information as well as creating 2D cutouts of objects of
 interest.
 """
 import os
-from typing import NamedTuple, Optional, Union
+from typing import Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -18,21 +18,7 @@ from astropy.table import Table
 from astropy.wcs import WCS
 
 from hda_fits.logging_config import logging
-
-
-class WCSCoordinates(NamedTuple):
-    """Right ascension (RA) and declination (DEC) coordinates"""
-
-    RA: float
-    DEC: float
-
-
-class RectangleSize(NamedTuple):
-    """The height and width of a rectangle"""
-
-    image_height: int
-    image_width: int
-
+from hda_fits.types import RectangleSize, WCSCoordinates
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
