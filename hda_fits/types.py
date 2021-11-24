@@ -32,3 +32,19 @@ class PinkHeader(NamedTuple):
     dimensionality: int
     layout: PinkLayout
     header_end_offset: int
+
+
+class SOMLayout(NamedTuple):
+    pass
+
+
+class SOMHeader(NamedTuple):
+    pass
+
+
+class MapLayout(NamedTuple):
+    pass
+
+
+class MapHeader(NamedTuple):
+    pass

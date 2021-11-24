@@ -77,6 +77,7 @@ def read_pink_file_image_from_stream(
 
 
 def read_pink_file_image(filepath: str, image_number: int) -> np.ndarray:
+    """Reads and reshapes the data of a .pink image"""
     with open(filepath, "rb") as file_stream:
         header = read_pink_file_header_from_stream(file_stream=file_stream)
         layout = header.layout
@@ -96,6 +97,7 @@ def read_pink_file_image(filepath: str, image_number: int) -> np.ndarray:
 def read_pink_file_multiple_images(
     filepath: str, image_numbers: List[int]
 ) -> List[np.ndarray]:
+    """Reads and reshapes multiple .pink images"""
 
     images = []
 

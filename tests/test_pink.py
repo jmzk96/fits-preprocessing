@@ -4,6 +4,7 @@ import struct
 import hda_fits as hfits
 from hda_fits import fits, pink
 from hda_fits.logging_config import logging
+from hda_fits.types import PinkHeader, PinkLayout
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
@@ -264,3 +265,36 @@ def test_write_catalog_to_pink_file_with_partial_images_95px(
 
     assert tmp_filepath.exists()
     assert number_of_images == 5
+
+
+def test_read_pink_file_header(test_pink_file):
+    header = pink.read_pink_file_header(test_pink_file)
+
+    assert type(header) == PinkHeader
+    assert header.version == 2
+    assert header.data_type == 0
+    assert header.file_type == 0
+    assert header.dimensionality == 2
+    assert header.number_of_images == 20
+    assert header.data_layout == 0
+    assert header.layout == PinkLayout(depth=1, height=95, width=95)
+
+
+def test_read_pink_file_image_first_image(test_pink_file):
+    image = pink.read_pink_file_image(test_pink_file, 0)
+    assert image.shape == (95, 95)
+
+
+def test_read_pink_file_image_last_image(test_pink_file):
+    image = pink.read_pink_file_image(test_pink_file, 19)
+    assert image.shape == (95, 95)
+
+
+def test_read_pink_file_image_invalid_index(test_pink_file):
+    image = None
+    try:
+        image = pink.read_pink_file_image(test_pink_file, 20)
+    except struct.error as e:
+        assert e is not None
+
+    assert image is None
