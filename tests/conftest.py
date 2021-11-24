@@ -51,6 +51,27 @@ def test_data_dir():
 
 
 @pytest.fixture(scope="module")
+def test_pink_file(test_data_dir):
+    path = test_data_dir / "pink" / "test_m_20_95_95.pink"
+    assert path.exists()
+    return path
+
+
+@pytest.fixture(scope="module")
+def test_map_file(test_data_dir):
+    path = test_data_dir / "pink" / "test_m_20_95_95.map"
+    assert path.exists()
+    return path
+
+
+@pytest.fixture(scope="module")
+def test_som_file(test_data_dir):
+    path = test_data_dir / "pink" / "test_m_20_95_95.som"
+    assert path.exists()
+    return path
+
+
+@pytest.fixture(scope="module")
 def test_mosaic_dir(test_data_dir):
     path = test_data_dir / "reduced_mosaics"
     assert path.exists()

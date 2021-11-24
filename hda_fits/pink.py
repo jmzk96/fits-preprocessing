@@ -4,7 +4,7 @@ This module provides I/O functionality related to the PINK self
 organizing maps application.
 """
 import struct
-from typing import List, Union
+from typing import BinaryIO, List, Union
 
 import numpy as np
 import pandas as pd
@@ -13,9 +13,110 @@ from astropy.io.fits.hdu.image import PrimaryHDU
 import hda_fits.fits as hfits
 from hda_fits.fits import RectangleSize, WCSCoordinates, load_mosaic
 from hda_fits.logging_config import logging
+from hda_fits.types import PinkHeader, PinkLayout
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
+
+
+def read_pink_file_header_from_stream(file_stream: BinaryIO) -> PinkHeader:
+    (
+        version,
+        file_type,
+        data_type,
+        number_of_images,
+        data_layout,
+        dimensionality,
+    ) = struct.unpack("i" * 6, file_stream.read(4 * 6))
+
+    depth = struct.unpack("i", file_stream.read(4))[0] if dimensionality > 2 else 1
+    height = struct.unpack("i", file_stream.read(4))[0] if dimensionality > 1 else 1
+    width = struct.unpack("i", file_stream.read(4))[0]
+
+    pink_layout = PinkLayout(width=width, height=height, depth=depth)
+
+    header_end_offset = file_stream.tell()
+
+    return PinkHeader(
+        version,
+        file_type,
+        data_type,
+        number_of_images,
+        data_layout,
+        dimensionality,
+        pink_layout,
+        header_end_offset,
+    )
+
+
+def read_pink_file_header(filepath: str) -> PinkHeader:
+    with open(filepath, "rb") as file_stream:
+        header = read_pink_file_header_from_stream(file_stream=file_stream)
+
+    return header
+
+
+def read_pink_file_image_from_stream(
+    file_stream, image_size, image_number, header_offset, layout
+):
+    """Read an image from an absolute position
+
+    This function will seek to the absolute position in the open file
+    and read the `image_size` floating point values.
+    """
+    file_stream.seek(image_size * image_number * 4 + header_offset, 0)
+    image_size = layout.width * layout.height * layout.depth
+    data = struct.unpack("f" * image_size, file_stream.read(image_size * 4))
+
+    if layout.depth == 1:
+        image = np.array(data).reshape((layout.height, layout.width))
+    else:
+        image = np.array(data).reshape((layout.depth, layout.height, layout.width))
+
+    return image
+
+
+def read_pink_file_image(filepath: str, image_number: int) -> np.ndarray:
+    """Reads and reshapes the data of a .pink image"""
+    with open(filepath, "rb") as file_stream:
+        header = read_pink_file_header_from_stream(file_stream=file_stream)
+        layout = header.layout
+        image_size = layout.width * layout.height * layout.depth
+
+        file_stream.seek(image_number * image_size * 4, 1)
+        data = struct.unpack("f" * image_size, file_stream.read(image_size * 4))
+
+        if layout.depth == 1:
+            image = np.array(data).reshape((layout.height, layout.width))
+        else:
+            image = np.array(data).reshape((layout.depth, layout.height, layout.width))
+
+    return image
+
+
+def read_pink_file_multiple_images(
+    filepath: str, image_numbers: List[int]
+) -> List[np.ndarray]:
+    """Reads and reshapes multiple .pink images"""
+
+    images = []
+
+    with open(filepath, "rb") as file_stream:
+        header = read_pink_file_header_from_stream(file_stream=file_stream)
+        layout = header.layout
+        image_size = layout.width * layout.height * layout.depth
+
+        for image_number in image_numbers:
+            image = read_pink_file_image_from_stream(
+                file_stream,
+                image_size=image_size,
+                image_number=image_number,
+                header_offset=header.header_end_offset,
+                layout=layout,
+            )
+            images.append(image)
+
+    return images
 
 
 def write_pink_file_header(
@@ -41,22 +142,22 @@ def write_pink_file_header(
 
 
 def convert_pink_file_header_v1_to_v2(filepath: str):
-    with open(filepath, "rb") as file:
+    with open(filepath, "rb") as file_stream:
         (
             number_of_images,
             number_of_channels,
             image_width,
             image_height,
-        ) = struct.unpack("i" * 4, file.read(4 * 4))
+        ) = struct.unpack("i" * 4, file_stream.read(4 * 4))
         try:
-            with open(filepath, "rb") as file:
-                len_of_file = len(file.read())
-                file.seek(16)
-                data = file.read()
-                log.info(f"Extracted {(len_of_file-16)/4} floats from file")
+            with open(filepath, "rb") as file_stream:
+                len_of_file = len(file_stream.read())
+                file_stream.seek(16)
+                data = file_stream.read()
+                log.info(f"Extracted {(len_of_file-16)/4} floats from file_stream")
         except ValueError as e:
             log.warning(e)
-            log.warning("No trailing data after header or wrong file format")
+            log.warning("No trailing data after header or wrong file_stream format")
 
         write_pink_file_header(
             filepath=filepath,
@@ -67,30 +168,30 @@ def convert_pink_file_header_v1_to_v2(filepath: str):
             version="v2",
         )
         try:
-            with open(filepath, "ab") as file:
-                file.write(data)
+            with open(filepath, "ab") as file_stream:
+                file_stream.write(data)
         except ValueError as e:
             log.warning(e)
             log.warning("No trailing data after header")
 
 
 def convert_pink_file_header_v2_to_v1(filepath: str):
-    with open(filepath, "rb") as file:
-        list_of_parameters = struct.unpack("i" * 8, file.read(4 * 8))
+    with open(filepath, "rb") as file_stream:
+        list_of_parameters = struct.unpack("i" * 8, file_stream.read(4 * 8))
         number_of_images, image_height, image_width = (
             list_of_parameters[3],
             list_of_parameters[6],
             list_of_parameters[7],
         )
         try:
-            with open(filepath, "rb") as file:
-                len_of_file = len(file.read())
-                file.seek(32)
-                data = file.read()
-                log.info(f"Extracted {(len_of_file-32)/4} floats from file")
+            with open(filepath, "rb") as file_stream:
+                len_of_file = len(file_stream.read())
+                file_stream.seek(32)
+                data = file_stream.read()
+                log.info(f"Extracted {(len_of_file-32)/4} floats from file_stream")
         except ValueError as e:
             log.warning(e)
-            log.warning("No trailing data after header or wrong file format")
+            log.warning("No trailing data after header or wrong file_stream format")
         write_pink_file_header(
             filepath=filepath,
             number_of_images=number_of_images,
@@ -100,8 +201,8 @@ def convert_pink_file_header_v2_to_v1(filepath: str):
             version="v1",
         )
         try:
-            with open(filepath, "ab") as file:
-                file.write(data)
+            with open(filepath, "ab") as file_stream:
+                file_stream.write(data)
         except ValueError as e:
             log.warning(e)
             log.warning("No trailing data after header")
@@ -147,7 +248,7 @@ def write_mosaic_objects_to_pink_file_v2(
             data = hfits.denoise_cutouts_from_mean(data)
         except ValueError as e:
             log.warning(e)
-            log.warning(f"Image at coordinates {coord} not added to pink file")
+            log.warning(f"Image at coordinates {coord} not added to pink file_stream")
             number_of_images -= 1
             continue
 
@@ -161,7 +262,7 @@ def write_mosaic_objects_to_pink_file_v2(
             log.warning(
                 f"Data was truncated. Expected {number_of_pixels}, got {data.size} floats."
             )
-            log.warning(f"Image at coordinates {coord} not added to pink file")
+            log.warning(f"Image at coordinates {coord} not added to pink file_stream")
             number_of_images -= 1
             write_pink_file_header(
                 filepath=filepath,
@@ -230,7 +331,7 @@ def write_catalog_objects_pink_file_v2(
     fill_nan: bool = False,
 ):
     """
-    Writes all images in a given catalog to a binary file in PINK v2 format.
+    Writes all images in a given catalog to a binary file_stream in PINK v2 format.
     This includes loading (and optionally downloading) each required mosaic
     and updating the sum of written images at the end.
     """
