@@ -43,8 +43,24 @@ class SOMHeader(NamedTuple):
 
 
 class MapLayout(NamedTuple):
+    width: int
+    height: int
+    depth: int
     pass
 
 
 class MapHeader(NamedTuple):
+    version: Literal[1, 2]
+    file_type: Literal[0]
+    # Only 32 bit floating point = 0
+    data_type: Literal[0]
+    number_of_images: int
+    # Cartesian = 0 / Hexadecimal = 1
+    data_layout: Literal[0, 1]
+    dimensionality: int
+    layout: MapLayout
+    somWidth: int
+    somHeight: int
+    somDepth: int
+    header_end_offset: int
     pass
