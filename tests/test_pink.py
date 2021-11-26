@@ -272,8 +272,8 @@ def test_read_pink_file_header(test_pink_file):
 
     assert type(header) == PinkHeader
     assert header.version == 2
-    assert header.data_type == 0
     assert header.file_type == 0
+    assert header.data_type == 0
     assert header.dimensionality == 2
     assert header.number_of_images == 20
     assert header.data_layout == 0

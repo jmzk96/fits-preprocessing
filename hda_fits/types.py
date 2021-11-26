@@ -44,6 +44,9 @@ class SOMHeader(NamedTuple):
     som_dimensionality: int
     som_layout: Layout
     neuron_dimensionality: int
+    # --neuron-dimension, -d <int>
+    #   Dimension for quadratic SOM neurons
+    #   (default = 2 * image-dimension / sqrt(2)).
     neuron_layout: Layout
     header_end_offset: int
 
