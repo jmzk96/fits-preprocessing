@@ -46,7 +46,6 @@ class MapLayout(NamedTuple):
     width: int
     height: int
     depth: int
-    pass
 
 
 class MapHeader(NamedTuple):
@@ -59,8 +58,7 @@ class MapHeader(NamedTuple):
     data_layout: Literal[0, 1]
     dimensionality: int
     layout: MapLayout
-    somWidth: int
-    somHeight: int
-    somDepth: int
+    som_width: int
+    som_height: int
+    som_depth: int
     header_end_offset: int
-    pass

@@ -24,11 +24,11 @@ def read_map_file_header_from_stream(file_stream: BinaryIO) -> MapHeader:
     ) = struct.unpack("i" * 6, file_stream.read(4 * 6))
 
     numberOfImages = number_of_data_entries
-    somWidth = som_dimensionality[0]
-    somHeight = som_dimensionality[1] if som_dimensionality > 1 else 1
-    somDepth = som_dimensionality[2] if som_dimensionality > 2 else 1
+    som_width = som_dimensionality[0]
+    som_height = som_dimensionality[1] if som_dimensionality > 1 else 1
+    som_depth = som_dimensionality[2] if som_dimensionality > 2 else 1
 
-    map_layout = MapLayout(width=somWidth, height=somHeight, depth=somDepth)
+    map_layout = MapLayout(width=som_width, height=som_height, depth=som_depth)
 
     header_end_offset = file_stream.tell()
 
@@ -40,9 +40,9 @@ def read_map_file_header_from_stream(file_stream: BinaryIO) -> MapHeader:
         som_layout,
         som_dimensionality,
         map_layout,
-        somWidth,
-        somHeight,
-        somDepth,
+        som_width,
+        som_height,
+        som_depth,
         header_end_offset,
     )
 
@@ -52,9 +52,9 @@ def read_map_file_mapping_from_stream(
     som_size,
     image_number,
     header_offset,
-    somWidth,
-    somHeight,
-    somDepth,
+    som_width,
+    som_height,
+    som_depth,
 ):
     """Read an image from an absolute position
 
@@ -64,10 +64,10 @@ def read_map_file_mapping_from_stream(
     file_stream.seek(som_size * image_number * 4 + header_offset, 0)
     data = struct.unpack("f" * som_size, file_stream.read(som_size * 4))
 
-    if somDepth == 1:
-        mapping = np.array(data).reshape((somHeight, somWidth))
+    if som_depth == 1:
+        mapping = np.array(data).reshape((som_height, som_width))
     else:
-        mapping = np.array(data).reshape((somDepth, somHeight, somWidth))
+        mapping = np.array(data).reshape((som_depth, som_height, som_width))
 
     return mapping
 
@@ -75,32 +75,29 @@ def read_map_file_mapping_from_stream(
 def read_map_file_mapping(filepath: str, image_number: int) -> np.ndarray:
     with open(filepath, "rb") as file_stream:
         header = read_map_file_header_from_stream(file_stream=file_stream)
-        som_size = header.somWidth * header.somHeight * header.somDepth
+        som_size = header.som_width * header.som_height * header.som_depth
 
         mapping = read_map_file_mapping_from_stream(
             file_stream,
             som_size,
             image_number,
-            header.somWidth,
-            header.somHeight,
-            header.somDepth,
+            header.som_width,
+            header.som_height,
+            header.som_depth,
         )
 
     return mapping
 
 
-# def count_images_per_class(imagecount, somwidth, somheight, somdepth, mapfile):
+def count_images_per_class(imagecount, som_width, som_height, som_depth, mapfile):
 
-#   if somdepth == 1:
-#       countarray = np.zeros((somwidth, somheight), dtype=np.int16)
-#    else:
-#      countarray = np.zeros((somwidth, somheight, somdepth), dtype=np.int16)
+    countarray = np.zeros(som_width * som_height * som_depth, dtype=np.int32)
+    pos_vec = []
 
-#    for i in range(imagecount - 1):
-# pos = pos_class_of_image(i, mapfile)  # Funktion ist noch zu schreiben
-# countarray[pos] = +1
+    for i in range(imagecount):
+        mapping = read_map_file_mapping(mapfile, i).flatten()
+        pos = np.argmin(mapping)
+        pos_vec.append(pos)
+        countarray[pos] += 1
 
-#   return countarray
-
-
-# soll die Position im Som Array wieder geben für die das betrachtete Bild den kleinsten Floatwert annimmt
+    return countarray, pos_vec
