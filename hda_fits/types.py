@@ -15,7 +15,7 @@ class RectangleSize(NamedTuple):
     image_width: int
 
 
-class PinkLayout(NamedTuple):
+class Layout(NamedTuple):
     width: int
     height: int
     depth: int
@@ -30,35 +30,32 @@ class PinkHeader(NamedTuple):
     # Cartesian = 0 / Hexadecimal = 1
     data_layout: Literal[0, 1]
     dimensionality: int
-    layout: PinkLayout
+    layout: Layout
     header_end_offset: int
 
 
-class SOMLayout(NamedTuple):
-    pass
-
-
 class SOMHeader(NamedTuple):
-    pass
-
-
-class MapLayout(NamedTuple):
-    width: int
-    height: int
-    depth: int
+    version: Literal[1, 2]
+    file_type: Literal[1]
+    # Only 32 bit floating point = 0
+    data_type: Literal[0]
+    # Cartesian = 0 / Hexadecimal = 1
+    data_layout: Literal[0, 1]
+    som_dimensionality: int
+    som_layout: Layout
+    neuron_dimensionality: int
+    neuron_layout: Layout
+    header_end_offset: int
 
 
 class MapHeader(NamedTuple):
     version: Literal[1, 2]
-    file_type: Literal[0]
+    file_type: Literal[2]
     # Only 32 bit floating point = 0
     data_type: Literal[0]
     number_of_images: int
     # Cartesian = 0 / Hexadecimal = 1
     data_layout: Literal[0, 1]
     dimensionality: int
-    layout: MapLayout
-    som_width: int
-    som_height: int
-    som_depth: int
+    som_layout: Layout
     header_end_offset: int

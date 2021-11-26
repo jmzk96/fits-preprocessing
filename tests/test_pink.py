@@ -4,7 +4,7 @@ import struct
 import hda_fits as hfits
 from hda_fits import fits, pink
 from hda_fits.logging_config import logging
-from hda_fits.types import PinkHeader, PinkLayout
+from hda_fits.types import Layout, PinkHeader
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
@@ -277,7 +277,7 @@ def test_read_pink_file_header(test_pink_file):
     assert header.dimensionality == 2
     assert header.number_of_images == 20
     assert header.data_layout == 0
-    assert header.layout == PinkLayout(depth=1, height=95, width=95)
+    assert header.layout == Layout(depth=1, height=95, width=95)
 
 
 def test_read_pink_file_image_first_image(test_pink_file):
