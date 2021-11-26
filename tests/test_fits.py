@@ -61,10 +61,9 @@ def test_get_correct_coordinates_and_sizes(
 def test_get_correct_catalog_subset(
     mosaic_id, test_mosaic_dir, catalog_filepath, type_list, shimwell_catalog_df
 ):
-    catalog_subset = shimwell_catalog_df.loc[
+    catalog_subset = shimwell_catalog_df[
         (shimwell_catalog_df.Mosaic_ID.str.contains(mosaic_id, regex=False))
-        & (shimwell_catalog_df.S_Code.str.contains("C|M", regex=True)),
-        :,
+        & (shimwell_catalog_df.S_Code.str.contains("C|M", regex=True))
     ]
     catalog_test = fits.get_sizes_of_objects(
         mosaic_id, test_mosaic_dir, catalog_filepath, type_list
