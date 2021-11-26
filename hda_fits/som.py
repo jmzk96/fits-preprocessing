@@ -86,7 +86,7 @@ def read_som_file_node_from_stream(
     image_number: int,
     header_offset: int,
     layout: Layout,
-):
+) -> np.ndarray:
     image_size = layout.width * layout.height * layout.depth
     file_stream.seek(image_size * image_number * 4 + header_offset, 0)
     data = struct.unpack("f" * image_size, file_stream.read(image_size * 4))

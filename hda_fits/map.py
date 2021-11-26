@@ -1,5 +1,5 @@
 import struct
-from typing import BinaryIO
+from typing import BinaryIO, List, Tuple
 
 import numpy as np
 
@@ -46,7 +46,7 @@ def read_map_file_header_from_stream(file_stream: BinaryIO) -> MapHeader:
 
 def read_map_file_mapping_from_stream(
     file_stream, som_size, image_number, header_offset, layout
-):
+) -> np.ndarray:
     """Read an image from an absolute position
 
     This function will seek to the absolute position in the open file
@@ -76,14 +76,16 @@ def read_map_file_mapping(filepath: str, image_number: int) -> np.ndarray:
     return mapping
 
 
-def count_images_per_class(imagecount, som_width, som_height, som_depth, mapfile):
+def count_images_per_class(
+    imagecount, som_width, som_height, som_depth, mapfile
+) -> Tuple[np.ndarray, List[int]]:
 
     countarray = np.zeros(som_width * som_height * som_depth, dtype=np.int32)
     pos_vec = []
 
     for i in range(imagecount):
         mapping = read_map_file_mapping(mapfile, i).flatten()
-        pos = np.argmin(mapping)
+        pos = int(np.argmin(mapping))
         pos_vec.append(pos)
         countarray[pos] += 1
 
