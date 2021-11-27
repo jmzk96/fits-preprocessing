@@ -13,7 +13,7 @@ def test_read_map_file_header(test_map_file):
     assert header.version == 2
     assert header.file_type == 2
     assert header.data_type == 0
-    assert header.number_of_images == 2
+    assert header.number_of_images == 20
     assert header.data_layout == 0
     assert header.dimensionality == 2
     assert header.som_layout == Layout(width=2, height=2, depth=1)
