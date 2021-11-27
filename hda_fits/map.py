@@ -59,7 +59,7 @@ def read_map_file_mapping_from_stream(
     file_stream.seek(som_size * image_number * 4 + header_offset, 0)
     data = struct.unpack("f" * som_size, file_stream.read(som_size * 4))
 
-    if layout.som_depth == 1:
+    if layout.depth == 1:
         mapping = np.array(data).reshape((layout.height, layout.width))
     else:
         mapping = np.array(data).reshape((layout.depth, layout.height, layout.width))
