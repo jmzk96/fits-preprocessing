@@ -338,7 +338,7 @@ def write_catalog_objects_pink_file_v2(
     min_max_scale: bool = False,
     download: bool = False,
     fill_nan: bool = False,
-) -> int:
+) -> pd.DataFrame:
     """
     Writes all images in a given catalog to a binary file_stream in PINK v2 format.
     This includes loading (and optionally downloading) each required mosaic
@@ -347,6 +347,8 @@ def write_catalog_objects_pink_file_v2(
 
     if isinstance(image_size, int):
         image_size = RectangleSize(image_height=image_size, image_width=image_size)
+
+    catalog_of_written_images = pd.DataFrame()
 
     mosaic_ids = catalog["Mosaic_ID"].unique().tolist()
     number_of_images_to_write = catalog.shape[0]
@@ -366,9 +368,8 @@ def write_catalog_objects_pink_file_v2(
     for mosaic_id in mosaic_ids:
         hdu = load_mosaic(mosaic_id=mosaic_id, path=mosaic_path, download=download)
 
-        coordinates = catalog[catalog["Mosaic_ID"] == mosaic_id][
-            ["RA", "DEC"]
-        ].values.tolist()
+        catalog_mosaic_subset = catalog[catalog["Mosaic_ID"] == mosaic_id].copy()
+        coordinates = catalog_mosaic_subset[["RA", "DEC"]].values.tolist()
 
         image_was_written = write_mosaic_objects_to_pink_file_v2(
             filepath=filepath,
@@ -378,6 +379,11 @@ def write_catalog_objects_pink_file_v2(
             min_max_scale=min_max_scale,
             fill_nan=fill_nan,
             overwrite_header=True,
+        )
+
+        catalog_mosaic_subset_written = catalog_mosaic_subset[image_was_written]
+        catalog_of_written_images = catalog_of_written_images.append(
+            catalog_mosaic_subset_written
         )
 
         number_of_images += sum(image_was_written)
@@ -391,4 +397,4 @@ def write_catalog_objects_pink_file_v2(
     )
 
     log.info(f"Wrote {number_of_images} images to {filepath}.")
-    return number_of_images
+    return catalog_of_written_images
