@@ -222,12 +222,15 @@ def write_mosaic_objects_to_pink_file_v2(
     min_max_scale: bool = False,
     fill_nan=False,
     overwrite_header=False,
-) -> int:
+) -> List[bool]:
+
     if isinstance(image_size, int):
         image_size = RectangleSize(image_size, image_size)
 
     number_of_pixels = image_size.image_height * image_size.image_width
+
     number_of_images = len(coordinates)
+    image_was_written = []
 
     write_pink_file_header(
         filepath=filepath,
@@ -250,7 +253,7 @@ def write_mosaic_objects_to_pink_file_v2(
         except ValueError as e:
             log.warning(e)
             log.warning(f"Image at coordinates {coord} not added to pink file_stream")
-            number_of_images -= 1
+            image_was_written.append(False)
             continue
 
         if min_max_scale:
@@ -259,23 +262,26 @@ def write_mosaic_objects_to_pink_file_v2(
 
         if data.size == number_of_pixels:
             write_pink_file_v2_data(filepath, data)
+            image_was_written.append(True)
         else:
             log.warning(
                 f"Data was truncated. Expected {number_of_pixels}, got {data.size} floats."
             )
             log.warning(f"Image at coordinates {coord} not added to pink file_stream")
-            number_of_images -= 1
-            write_pink_file_header(
-                filepath=filepath,
-                number_of_images=number_of_images,
-                image_height=image_size.image_height,
-                image_width=image_size.image_width,
-                overwrite=True,
-            )
+            image_was_written.append(False)
+
+    number_of_images = sum(image_was_written)
+    write_pink_file_header(
+        filepath=filepath,
+        number_of_images=number_of_images,
+        image_height=image_size.image_height,
+        image_width=image_size.image_width,
+        overwrite=True,
+    )
 
     log.info(f"Wrote {number_of_images} images to {filepath}")
 
-    return number_of_images
+    return image_was_written
 
 
 def write_all_objects_pink_file_v2(
@@ -306,13 +312,15 @@ def write_all_objects_pink_file_v2(
                 min_max_scale=min_max_scale,
             )
         else:
-            number_of_images += write_mosaic_objects_to_pink_file_v2(
+            image_was_written = write_mosaic_objects_to_pink_file_v2(
                 filepath=filepath + "all_objects_pink.bin",
                 coordinates=coord,
                 hdu=hdu,
                 image_size=image_size,
                 min_max_scale=min_max_scale,
             )
+            number_of_images += sum(image_was_written)
+
             write_pink_file_header(
                 filepath=filepath + "all_objects_pink.bin",
                 number_of_images=number_of_images,
@@ -330,7 +338,7 @@ def write_catalog_objects_pink_file_v2(
     min_max_scale: bool = False,
     download: bool = False,
     fill_nan: bool = False,
-):
+) -> int:
     """
     Writes all images in a given catalog to a binary file_stream in PINK v2 format.
     This includes loading (and optionally downloading) each required mosaic
@@ -362,7 +370,7 @@ def write_catalog_objects_pink_file_v2(
             ["RA", "DEC"]
         ].values.tolist()
 
-        number_of_images_current = write_mosaic_objects_to_pink_file_v2(
+        image_was_written = write_mosaic_objects_to_pink_file_v2(
             filepath=filepath,
             hdu=hdu,
             coordinates=coordinates,
@@ -372,7 +380,7 @@ def write_catalog_objects_pink_file_v2(
             overwrite_header=True,
         )
 
-        number_of_images += number_of_images_current
+        number_of_images += sum(image_was_written)
 
     write_pink_file_header(
         filepath=filepath,
@@ -383,5 +391,4 @@ def write_catalog_objects_pink_file_v2(
     )
 
     log.info(f"Wrote {number_of_images} images to {filepath}.")
-
     return number_of_images
