@@ -59,14 +59,14 @@ def test_pink_file(test_data_dir):
 
 @pytest.fixture(scope="module")
 def test_map_file(test_data_dir):
-    path = test_data_dir / "pink" / "test_m_20_95_95.map"
+    path = test_data_dir / "map" / "test_m_20_95_95.map"
     assert path.exists()
     return path
 
 
 @pytest.fixture(scope="module")
 def test_som_file(test_data_dir):
-    path = test_data_dir / "pink" / "test_m_20_95_95.som"
+    path = test_data_dir / "som" / "test_m_20_95_95.som"
     assert path.exists()
     return path
 
