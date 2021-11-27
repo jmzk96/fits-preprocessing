@@ -1,4 +1,5 @@
 import struct
+from math import prod
 from typing import BinaryIO, List, Tuple
 
 import numpy as np
@@ -81,16 +82,27 @@ def read_map_file_mapping(filepath: str, image_number: int) -> np.ndarray:
 
 
 def count_images_per_class(
-    imagecount, som_width, som_height, som_depth, mapfile
+    imagecount: int, som_layout: Layout, mapfile: str
 ) -> Tuple[np.ndarray, List[int]]:
 
-    countarray = np.zeros(som_width * som_height * som_depth, dtype=np.int32)
-    pos_vec = []
+    image_count_per_node = np.zeros(prod(som_layout), dtype=np.int32)
+    node_per_image = []
 
     for i in range(imagecount):
         mapping = read_map_file_mapping(mapfile, i).flatten()
         pos = int(np.argmin(mapping))
-        pos_vec.append(pos)
-        countarray[pos] += 1
+        node_per_image.append(pos)
+        image_count_per_node[pos] += 1
 
-    return countarray, pos_vec
+    return image_count_per_node, node_per_image
+
+
+def create_selection_vector(
+    node_per_image: List[int], nodes_selection_list: List[int]
+) -> List[bool]:
+    selection_vec = []
+
+    for node in node_per_image:
+        selection_vec.append(node not in nodes_selection_list)
+
+    return selection_vec

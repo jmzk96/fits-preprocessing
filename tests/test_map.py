@@ -36,11 +36,7 @@ def test_read_map_file_mapping(test_map_file):
 def test_count_images_per_class(test_map_file):
     header = map.read_map_file_header(test_map_file)
     countarray, pos_vec = map.count_images_per_class(
-        header.number_of_images,
-        header.som_layout.width,
-        header.som_layout.height,
-        header.som_layout.depth,
-        test_map_file,
+        header.number_of_images, header.som_layout, test_map_file
     )
 
     assert len(countarray) == prod(header.som_layout)
@@ -48,3 +44,7 @@ def test_count_images_per_class(test_map_file):
     assert type(countarray[0]) == np.int32
     assert type(pos_vec[0]) == int
     assert countarray.sum() == len(pos_vec)
+
+
+def test_create_selection_vec():
+    pass
