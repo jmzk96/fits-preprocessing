@@ -47,3 +47,4 @@ def test_count_images_per_class(test_map_file):
     assert len(pos_vec) == header.number_of_images
     assert type(countarray[0]) == np.int32
     assert type(pos_vec[0]) == int
+    assert countarray.sum() == len(pos_vec)
