@@ -69,12 +69,13 @@ def test_convert_pink_file_header_v1_v2(
     tmp_filepath = tmp_path / "test_file.pink"
     image_height = 95
     image_width = 95
-    number_of_images = hfits.write_catalog_objects_pink_file_v2(
+    catalog_written = hfits.write_catalog_objects_pink_file_v2(
         filepath=tmp_filepath,
         catalog=catalog_p205_p218_full_95px,
         mosaic_path=test_mosaic_dir,
         image_size=95,
     )
+    number_of_images = catalog_written.shape[0]
 
     pink.convert_pink_file_header_v2_to_v1(tmp_filepath)
     with open(tmp_filepath, "rb") as f:
@@ -127,14 +128,14 @@ def test_write_mosaic_objects_to_pink_file_v2_with_square_image_size(
 
     assert not tmp_filepath.exists()
 
-    number_of_written_images = hfits.write_mosaic_objects_to_pink_file_v2(
+    image_was_written = hfits.write_mosaic_objects_to_pink_file_v2(
         filepath=tmp_filepath,
         hdu=hdu,
         coordinates=[c1, c1, c1],
         image_size=20,
     )
 
-    assert number_of_written_images == 3
+    assert sum(image_was_written) == 3
     assert tmp_filepath.exists()
 
 
@@ -151,14 +152,14 @@ def test_write_mosaic_objects_to_pink_file_v2_with_rectangular_image_size(
 
     assert not tmp_filepath.exists()
 
-    number_of_written_images = hfits.write_mosaic_objects_to_pink_file_v2(
+    image_was_written = hfits.write_mosaic_objects_to_pink_file_v2(
         filepath=tmp_filepath,
         hdu=hdu,
         coordinates=[c1, c1, c1],
         image_size=fits.RectangleSize(image_height=20, image_width=10),
     )
 
-    assert number_of_written_images == 3
+    assert sum(image_was_written) == 3
     assert os.path.exists(tmp_filepath)
 
 
@@ -173,14 +174,14 @@ def test_write_mosaic_objects_to_pink_file_v2_with_coordinate_outside_of_mosaic(
 
     assert not tmp_filepath.exists()
 
-    number_of_written_images = hfits.write_mosaic_objects_to_pink_file_v2(
+    image_was_written = hfits.write_mosaic_objects_to_pink_file_v2(
         filepath=tmp_filepath,
         hdu=hdu,
         coordinates=[example_object_world_coordinates_outside],
         image_size=20,
     )
 
-    assert number_of_written_images == 0
+    assert sum(image_was_written) == 0
     assert os.path.exists(tmp_filepath)
 
 
@@ -195,14 +196,14 @@ def test_write_mosaic_objects_to_pink_file_v2_with_image_containing_nan(
 
     assert not tmp_filepath.exists()
 
-    number_of_written_images = hfits.write_mosaic_objects_to_pink_file_v2(
+    image_was_written = hfits.write_mosaic_objects_to_pink_file_v2(
         filepath=tmp_filepath,
         hdu=hdu,
         coordinates=[example_object_world_coordinates],
         image_size=20,
     )
 
-    assert number_of_written_images == 0
+    assert sum(image_was_written) == 0
     assert os.path.exists(tmp_filepath)
 
 
@@ -217,7 +218,7 @@ def test_write_mosaic_objects_to_pink_file_v2_with_image_containing_nan_fill_nan
 
     assert not tmp_filepath.exists()
 
-    number_of_written_images = hfits.write_mosaic_objects_to_pink_file_v2(
+    image_was_written = hfits.write_mosaic_objects_to_pink_file_v2(
         filepath=tmp_filepath,
         hdu=hdu,
         coordinates=[example_object_world_coordinates],
@@ -225,7 +226,7 @@ def test_write_mosaic_objects_to_pink_file_v2_with_image_containing_nan_fill_nan
         fill_nan=True,
     )
 
-    assert number_of_written_images == 1
+    assert sum(image_was_written) == 1
     assert os.path.exists(tmp_filepath)
 
 
@@ -237,34 +238,39 @@ def test_write_catalog_to_pink_file_full_image_95px(
 
     assert not tmp_filepath.exists()
 
-    number_of_images = hfits.write_catalog_objects_pink_file_v2(
+    catalog_written = hfits.write_catalog_objects_pink_file_v2(
         filepath=tmp_filepath,
         catalog=catalog_p205_p218_full_95px,
         mosaic_path=test_mosaic_dir,
         image_size=95,
     )
+    number_of_images = catalog_written.shape[0]
 
     assert tmp_filepath.exists()
     assert number_of_images == 5
 
 
 def test_write_catalog_to_pink_file_with_partial_images_95px(
-    tmp_path, test_mosaic_dir, catalog_p205_p218_95px
+    tmp_path, test_mosaic_dir, catalog_p205_p218_95px, sources_p205_p218_full_95px
 ):
 
     tmp_filepath = tmp_path / "test_file.pink"
 
     assert not tmp_filepath.exists()
 
-    number_of_images = hfits.write_catalog_objects_pink_file_v2(
+    catalog_written = hfits.write_catalog_objects_pink_file_v2(
         filepath=tmp_filepath,
         catalog=catalog_p205_p218_95px,
         mosaic_path=test_mosaic_dir,
         image_size=95,
     )
+    number_of_images = catalog_written.shape[0]
 
     assert tmp_filepath.exists()
     assert number_of_images == 5
+
+    sources_found = catalog_written["Source_Name"].values.tolist()
+    assert sorted(sources_found) == sorted(sources_p205_p218_full_95px)
 
 
 def test_read_pink_file_header(test_pink_file):
