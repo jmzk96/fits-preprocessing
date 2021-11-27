@@ -46,5 +46,10 @@ def test_count_images_per_class(test_map_file):
     assert countarray.sum() == len(pos_vec)
 
 
-def test_create_selection_vec():
-    pass
+def test_create_selection_index():
+    node_per_image = [2, 3, 3, 1, 4]
+    nodes_removal_list = [1, 4]
+    image_index = map.create_selection_index(node_per_image, nodes_removal_list)
+
+    assert len(image_index) == 5
+    assert sum(image_index) == 3

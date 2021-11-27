@@ -97,12 +97,12 @@ def count_images_per_class(
     return image_count_per_node, node_per_image
 
 
-def create_selection_vector(
+def create_selection_index(
     node_per_image: List[int], nodes_selection_list: List[int]
 ) -> List[bool]:
-    selection_vec = []
+    image_index = []
 
     for node in node_per_image:
-        selection_vec.append(node not in nodes_selection_list)
+        image_index.append(node not in nodes_selection_list)
 
-    return selection_vec
+    return image_index
