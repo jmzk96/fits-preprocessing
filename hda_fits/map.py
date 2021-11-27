@@ -23,10 +23,14 @@ def read_map_file_header_from_stream(file_stream: BinaryIO) -> MapHeader:
         som_dimensionality,  # 1, 2, 3, .. -> 1D, 2D, 3D, ..
     ) = struct.unpack("i" * 6, file_stream.read(4 * 6))
 
+    som_dimensions = struct.unpack(
+        "i" * som_dimensionality, file_stream.read(4 * som_dimensionality)
+    )
+
     number_of_images = number_of_data_entries
-    som_width = som_dimensionality[0]
-    som_height = som_dimensionality[1] if som_dimensionality > 1 else 1
-    som_depth = som_dimensionality[2] if som_dimensionality > 2 else 1
+    som_width = som_dimensions[0]
+    som_height = som_dimensions[1] if som_dimensionality > 1 else 1
+    som_depth = som_dimensions[2] if som_dimensionality > 2 else 1
 
     som_layout = Layout(width=som_width, height=som_height, depth=som_depth)
 
