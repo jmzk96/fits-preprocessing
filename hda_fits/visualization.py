@@ -1,7 +1,15 @@
+from typing import Tuple
+
 import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
+from matplotlib.pyplot import Axes
+
+from hda_fits.som import SOM
 
 
-def show_som(som, figsize=(12, 12), cmap="jet"):
+def show_som(
+    som: SOM, figsize: Tuple[int, int] = (12, 12), cmap: str = "jet"
+) -> Tuple[Figure, Axes]:
     """
     Function to visualize the SOM nodes in its
     respective grid layout.
@@ -18,4 +26,4 @@ def show_som(som, figsize=(12, 12), cmap="jet"):
             ax.imshow(som.get_node(i, j).T, cmap=cmap)
 
     fig.subplots_adjust(wspace=0.02, hspace=0.02)
-    return fig
+    return fig, axes
