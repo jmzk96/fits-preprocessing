@@ -35,9 +35,7 @@ def test_read_map_file_mapping(test_map_file):
 
 def test_count_images_per_class(test_map_file):
     header = map.read_map_file_header(test_map_file)
-    countarray, pos_vec = map.count_images_per_class(
-        header.number_of_images, header.som_layout, test_map_file
-    )
+    countarray, pos_vec = map.count_images_per_class(test_map_file)
 
     assert len(countarray) == prod(header.som_layout)
     assert len(pos_vec) == header.number_of_images

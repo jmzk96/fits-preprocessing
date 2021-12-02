@@ -7,6 +7,7 @@ from astropy.table import Table
 from astropy.wcs import WCS
 
 import hda_fits as hf
+import hda_fits.som as hsom
 from hda_fits.fits import RectangleSize, WCSCoordinates
 from hda_fits.logging_config import logging
 
@@ -123,6 +124,11 @@ def mosaic_hdu_and_wcs_with_nan(mosaic_hdu_and_wcs, example_object_pixel_coordin
     hdu_nan.data[tuple(example_object_pixel_coordinates)] = np.nan
     assert np.isnan(hdu_nan.data).any()
     return hdu_nan, wcs
+
+
+@pytest.fixture(scope="module")
+def example_som(test_som_file):
+    return hsom.read_som(test_som_file)
 
 
 @pytest.fixture(scope="module")

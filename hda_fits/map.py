@@ -81,14 +81,16 @@ def read_map_file_mapping(filepath: str, image_number: int) -> np.ndarray:
     return mapping
 
 
-def count_images_per_class(
-    imagecount: int, som_layout: Layout, mapfile: str
-) -> Tuple[np.ndarray, List[int]]:
+def count_images_per_class(mapfile: str) -> Tuple[np.ndarray, List[int]]:
+
+    header = read_map_file_header(mapfile)
+    som_layout = header.som_layout
+    number_of_images = header.number_of_images
 
     image_count_per_node = np.zeros(prod(som_layout), dtype=np.int32)
     node_per_image = []
 
-    for i in range(imagecount):
+    for i in range(number_of_images):
         mapping = read_map_file_mapping(mapfile, i).flatten()
         pos = int(np.argmin(mapping))
         node_per_image.append(pos)
