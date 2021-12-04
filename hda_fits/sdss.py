@@ -44,7 +44,7 @@ def bytes_to_pandas(list_of_bytes: List):
     df.reset_index(inplace=True)
     headers = df.iloc[0]
     df_with_proper_headers = pd.DataFrame(df.values[1:], columns=headers)
-    df_with_proper_headers = df_with_proper_headers(
+    df_with_proper_headers = df_with_proper_headers.astype(
         {
             "run": int,
             "camCol": int,
@@ -73,21 +73,20 @@ def getSDSSfiles(fieldInfo, band, filepath):
     camcol = str(fieldInfo[1])
     field = str(fieldInfo[2])
 
-    fileName = (
+    filename = (
         "frame-" + band + "-"
         "{0:06d}".format(int(run))
         + "-"
         + camcol
         + "-"
         + "{0:04d}".format(int(field))
-        + ".fits.bz2"
+        + ".fits"
     )
-    # filename = 'frame-'+band + '-''{0:06d}'.format(int(run))+'-'+camcol+'-'+'{0:04d}'.format(int(field))+'.fits'
     http = "https://dr12.sdss.org/sas/dr12/boss/photoObj/frames/301/"
 
     http += run + "/"
     http += camcol + "/"
-    http += fileName
+    http += filename
     with open(filepath, "wb") as f:
         content = requests.get(http).content
         f.write(content)
