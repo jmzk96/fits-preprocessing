@@ -68,25 +68,11 @@ def find_closest_field(SDSS_metadata_df: pd.DataFrame, coordinates: WCSCoordinat
 
 
 def getSDSSfiles(fieldInfo, band, filepath):
+    """Download SDSS file"""
+    run, camcol, field = fieldInfo
+    filename = f"frame-{band}-{run:06d}-{camcol}-{field:04d}.fits.bz2"
+    http = f"https://dr12.sdss.org/sas/dr12/boss/photoObj/frames/301/{run}/{camcol}/{filename}"
 
-    run = str(fieldInfo[0])
-    camcol = str(fieldInfo[1])
-    field = str(fieldInfo[2])
-
-    filename = (
-        "frame-" + band + "-"
-        "{0:06d}".format(int(run))
-        + "-"
-        + camcol
-        + "-"
-        + "{0:04d}".format(int(field))
-        + ".fits"
-    )
-    http = "https://dr12.sdss.org/sas/dr12/boss/photoObj/frames/301/"
-
-    http += run + "/"
-    http += camcol + "/"
-    http += filename
     with open(filepath, "wb") as f:
         content = requests.get(http).content
         f.write(content)
