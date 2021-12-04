@@ -16,8 +16,8 @@ def getSDSSfields(coordinates: WCSCoordinates, size: float):  # all in degree
     fmt = "csv"
     default_url = "http://skyserver.sdss3.org/public/en/tools/search/x_sql.aspx"
     delta = 0.5 * size + 0.13
-    ra_max = coordinates.RA + 1.5 * delta
-    ra_min = coordinates.RA - 1.5 * delta
+    ra_max = coordinates.RA + delta  # * 1.5
+    ra_min = coordinates.RA - delta  # * 1.5
     dec_max = coordinates.DEC + delta
     dec_min = coordinates.DEC - delta
 
@@ -60,8 +60,8 @@ def bytes_to_pandas(list_of_bytes: List):
 
 def find_closest_field(SDSS_metadata_df: pd.DataFrame, coordinates: WCSCoordinates):
     selected_field = SDSS_metadata_df.iloc[
-        (SDSS_metadata_df["ra"].sub(coordinates.ra).abs().idxmin())
-        & (SDSS_metadata_df["dec"].sub(coordinates.dec).abs().idxmin())
+        (SDSS_metadata_df["ra"].sub(coordinates.RA).abs().idxmin())
+        & (SDSS_metadata_df["dec"].sub(coordinates.DEC).abs().idxmin())
     ]
     run, camcol, field = selected_field.run, selected_field.camcol, selected_field.field
     return (run, camcol, field)
@@ -100,7 +100,7 @@ def create_sdss_image_array(r_band: PrimaryHDU, g_band: PrimaryHDU, b_band: Prim
     return optical_array
 
 
-def create_sdss_fits_file(data: np.array, filepath):
+def create_sdss_fits_file(data: np.ndarray, filepath):
     hdu = PrimaryHDU(data)
     hdu = HDUList([hdu])
     hdu.writeto(filepath)
