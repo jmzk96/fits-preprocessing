@@ -62,3 +62,12 @@ class MapHeader(NamedTuple):
     dimensionality: int
     som_layout: Layout
     header_end_offset: int
+
+
+class SDSSFields(NamedTuple):
+    run: int
+    camCol: int
+    field: int
+
+    def __str__(self):
+        return f"run-{self.run}-camCol-{self.camCol}-field-{self.field}"
