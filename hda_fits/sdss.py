@@ -10,6 +10,7 @@ import requests
 from astropy.io import fits
 from astropy.io.fits.hdu.hdulist import HDUList
 from astropy.io.fits.hdu.image import PrimaryHDU
+from astropy.visualization import make_lupton_rgb
 from astropy.wcs import WCS
 from reproject import reproject_interp
 
@@ -24,6 +25,8 @@ log.setLevel(logging.DEBUG)
 
 CROSSMATCH_CATALOG_FILENAME = "shimwell_sdss_crossmatch_catalog.parquet"
 SDSS_FIELD_COLUMNS = ["run", "cam_col", "field"]
+MOSAIC_CDELT1 = -0.00041666666666666
+MOSAIC_CDELT2 = 0.000416666666666666
 
 
 def query_sdss_fields(
@@ -136,12 +139,12 @@ def download_sdss_field_files(fields: SDSSFields, path: str):
 def download_field_files_in_crossmatch_catalog(
     crossmatch_catalog: pd.DataFrame, path: str, delay_seconds: float = None
 ):
-    crossmatch_objects = extract_sdss_fields_from_catalog(crossmatch_catalog)
-    fields = list(set([entry["sdss_fields"] for entry in crossmatch_objects]))
+    fields = extract_sdss_fields_from_catalog(crossmatch_catalog)
+    fields_unique = list(set(fields))
 
-    total_number_of_fields = len(fields)
+    total_number_of_fields = len(fields_unique)
 
-    for i, field in enumerate(fields):
+    for i, field in enumerate(fields_unique):
         # tmp_path = tempfile.TemporaryPath()
         # primary_hdus = load_sdss_field_files(field, tmp_path, download=True)
         # - create merge
@@ -161,6 +164,40 @@ def create_sdss_image_array(r_band: PrimaryHDU, g_band: PrimaryHDU, b_band: Prim
     return optical_array
 
 
+def create_lupton_rgb_image(rgb_images: List[np.ndarray], merge: bool = True):
+    rgb_lupton = make_lupton_rgb(*rgb_images)
+    if merge:
+        rgb_lupton = rgb_lupton.mean(axis=2)
+    return rgb_lupton
+
+
+def create_rgb_image(rgb_images: List[np.ndarray], merge: bool = True):
+    rgb_image = np.dstack(rgb_images)
+    if merge:
+        rgb_image = rgb_image.mean(axis=2)
+    return rgb_image
+
+
+def create_reprojected_rgb_image(
+    primary_hdus: List[PrimaryHDU],
+    coordinates: WCSCoordinates,
+    image_size: Union[int, RectangleSize],
+    merge: bool = True,
+    use_lupton_algorithm: bool = False,
+) -> np.ndarray:
+    projected_arrays = []
+    for hdu in primary_hdus:
+        projected_array = reproject_image_array(hdu, coordinates, image_size)
+        projected_arrays.append(projected_array)
+
+    if use_lupton_algorithm:
+        rgb_image = create_lupton_rgb_image(projected_arrays, merge=merge)
+    else:
+        rgb_image = create_rgb_image(projected_arrays, merge)
+
+    return rgb_image
+
+
 def create_sdss_fits_file(data: np.ndarray, filepath: str):
     hdu = PrimaryHDU(data)
     hdu = HDUList([hdu])
@@ -170,9 +207,9 @@ def create_sdss_fits_file(data: np.ndarray, filepath: str):
 def reproject_image_array(
     hdu: PrimaryHDU,
     coordinates: WCSCoordinates,
-    resolution_delt1: float,
-    resolution_delt2: float,
     image_size: Union[int, RectangleSize],
+    resolution_delt1: float = MOSAIC_CDELT1,
+    resolution_delt2: float = MOSAIC_CDELT2,
 ) -> np.ndarray:
     """
     This function gives back a reprojection or rather a rotated array of the input image array
@@ -182,23 +219,23 @@ def reproject_image_array(
         image_size = RectangleSize(image_size, image_size)
     wcs_input_dict = {
         "CTYPE1": "RA---TAN",
-        "CUNIT1": "deg",
-        "CDELT1": resolution_delt1,
-        "NAXIS1": 2 * image_size.image_width,
-        "CRPIX1": image_size.image_width,
-        "CRVAL1": coordinates.RA,
         "CTYPE2": "DEC--TAN",
+        "CUNIT1": "deg",
         "CUNIT2": "deg",
+        "CDELT1": resolution_delt1,
         "CDELT2": resolution_delt2,
-        "NAXIS2": 2 * image_size.image_height,
-        "CRPIX2": image_size.image_height,
+        "CRVAL1": coordinates.RA,
         "CRVAL2": coordinates.DEC,
+        "NAXIS1": image_size.image_width,
+        "NAXIS2": image_size.image_height,
+        "CRPIX1": image_size.image_width / 2.0,
+        "CRPIX2": image_size.image_height / 2.0,
     }
     wcs_setup = WCS(wcs_input_dict)
     reprojected_array = reproject_interp(
         input_data=hdu,
         output_projection=wcs_setup,
-        shape_out=[2 * image_size.image_width, 2 * image_size.image_height],
+        shape_out=[image_size.image_width, image_size.image_height],
         return_footprint=False,
     )
     return reprojected_array
@@ -206,12 +243,9 @@ def reproject_image_array(
 
 def extract_sdss_fields_from_catalog(crossmatch_catalog: pd.DataFrame) -> List:
     return crossmatch_catalog.apply(
-        lambda row: {
-            "Source_Name": row["Source_Name"],
-            "sdss_fields": SDSSFields(
-                run=row["run"], cam_col=row["cam_col"], field=row["field"]
-            ),
-        },
+        lambda row: SDSSFields(
+            run=row["run"], cam_col=row["cam_col"], field=row["field"]
+        ),
         axis=1,
     ).values.tolist()
 
@@ -291,3 +325,16 @@ def fill_sdss_shimwell_crossmatch_catalog(
 
         if delay_seconds:
             sleep(delay_seconds)
+
+
+def extract_crossmatch_attributes(catalog: pd.DataFrame):
+    return catalog.apply(
+        lambda row: {
+            "Source_Name": row["Source_Name"],
+            "wcs_coordinates": WCSCoordinates(row["RA"], row["DEC"]),
+            "sdss_fields": SDSSFields(
+                run=row["run"], cam_col=row["cam_col"], field=row["field"]
+            ),
+        },
+        axis=1,
+    ).values.tolist()
