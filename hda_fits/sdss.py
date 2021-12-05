@@ -1,7 +1,8 @@
 import urllib
 from io import BytesIO
 from pathlib import Path
-from typing import List, Union
+from time import sleep
+from typing import List, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -12,12 +13,22 @@ from astropy.io.fits.hdu.image import PrimaryHDU
 from astropy.wcs import WCS
 from reproject import reproject_interp
 
+from hda_fits import fits as hfits
+
+from .logging_config import logging
 from .types import RectangleSize, SDSSFields, WCSCoordinates
 
+log = logging.getLogger(__name__)
+log.setLevel(logging.DEBUG)
 
-def get_sdss_fields(
+
+CROSSMATCH_CATALOG_FILENAME = "shimwell_sdss_crossmatch_catalog.parquet"
+SDSS_FIELD_COLUMNS = ["run", "cam_col", "field"]
+
+
+def query_sdss_fields(
     coordinates: WCSCoordinates, size: float = 1, number_of_entries: int = 1
-) -> pd.DataFrame:  # all in degree
+) -> Tuple[pd.DataFrame, SDSSFields]:  # all in degree
 
     fmt = "csv"
     default_url = "http://skyserver.sdss3.org/public/en/tools/search/x_sql.aspx"
@@ -42,7 +53,10 @@ def get_sdss_fields(
     params = urllib.parse.urlencode({"cmd": query, "format": fmt})
     url_opened = urllib.request.urlopen(default_url + "?%s" % params)
     lines = url_opened.readlines()
-    return bytes_to_pandas(lines)
+    df = bytes_to_pandas(lines)
+    fields = SDSSFields(*df[["run", "cam_col", "field"]].values[0].tolist())
+    log.info(f"Scraped fields {fields}")
+    return df, fields
 
 
 def bytes_to_pandas(list_of_bytes: List) -> pd.DataFrame:
@@ -74,34 +88,69 @@ def bytes_to_pandas(list_of_bytes: List) -> pd.DataFrame:
 
 def download_sdss_file(fields: SDSSFields, band: str, filepath: Path):
     """Download SDSS file"""
-    run, camcol, field = fields
-    filename = f"frame-{band}-{run:06d}-{camcol}-{field:04d}.fits.bz2"
-    http = f"https://dr12.sdss.org/sas/dr12/boss/photoObj/frames/301/{run}/{camcol}/{filename}"
+    run, cam_col, field = fields
+    filename = f"frame-{band}-{run:06d}-{cam_col}-{field:04d}.fits.bz2"
+    http = f"https://dr12.sdss.org/sas/dr12/boss/photoObj/frames/301/{run}/{cam_col}/{filename}"
 
     with open(filepath, "wb") as f:
         content = requests.get(http).content
         f.write(content)
 
 
-def load_sdss_files(fields: SDSSFields, path: Path, download=True):
+def load_sdss_field_files(fields: SDSSFields, path: str, download: bool = False):
     primary_hdus = []
     bands = ["r", "g", "i"]
 
-    path = Path(path)
-    dirpath = path / "raw" / str(fields)
+    _path = Path(path)
+    dirpath = _path / "raw" / str(fields)
     dirpath.mkdir(parents=True, exist_ok=True)
 
     for band in bands:
         filepath = dirpath / f"{fields}-{band}.fits"
-        if not filepath.exists():
+        if not filepath.exists() and download:
             download_sdss_file(fields=fields, band=band, filepath=filepath)
         else:
-            print("Already got it")
+            log.debug(f"File {filepath} exists. Not downloading..")
 
         hdu = fits.open(filepath)[0]
         primary_hdus.append(hdu)
 
     return primary_hdus
+
+
+def download_sdss_field_files(fields: SDSSFields, path: str):
+    bands = ["r", "g", "i"]
+    _path = Path(path)
+    dirpath = _path / "raw" / str(fields)
+    dirpath.mkdir(parents=True, exist_ok=True)
+
+    for band in bands:
+        filepath = dirpath / f"{fields}-{band}.fits"
+        if not filepath.exists():
+            log.debug(f"Downloading {fields} to {filepath}")
+            download_sdss_file(fields=fields, band=band, filepath=filepath)
+        else:
+            log.debug(f"File {filepath} exists. Not downloading..")
+
+
+def download_field_files_in_crossmatch_catalog(
+    crossmatch_catalog: pd.DataFrame, path: str, delay_seconds: float = None
+):
+    crossmatch_objects = extract_sdss_fields_from_catalog(crossmatch_catalog)
+    fields = list(set([entry["sdss_fields"] for entry in crossmatch_objects]))
+
+    total_number_of_fields = len(fields)
+
+    for i, field in enumerate(fields):
+        # tmp_path = tempfile.TemporaryPath()
+        # primary_hdus = load_sdss_field_files(field, tmp_path, download=True)
+        # - create merge
+        # - reproject
+        # - save merged image
+        log.info(f"[{i}/{total_number_of_fields}] Downloading field {field}")
+        download_sdss_field_files(field, path)
+        if delay_seconds:
+            sleep(delay_seconds)
 
 
 def create_sdss_image_array(r_band: PrimaryHDU, g_band: PrimaryHDU, b_band: PrimaryHDU):
@@ -153,3 +202,95 @@ def reproject_image_array(
         return_footprint=False,
     )
     return reprojected_array
+
+
+def extract_sdss_fields_from_catalog(crossmatch_catalog: pd.DataFrame) -> List:
+    return crossmatch_catalog.apply(
+        lambda row: {
+            "Source_Name": row["Source_Name"],
+            "sdss_fields": SDSSFields(
+                run=row["run"], cam_col=row["cam_col"], field=row["field"]
+            ),
+        },
+        axis=1,
+    ).values.tolist()
+
+
+def create_empty_crossmatch_catalog(
+    path: str,
+    path_shimwell: str,
+    download_shimwell: bool = False,
+    overwrite: bool = False,
+):
+
+    filepath_crossmatch_catalog = Path(path) / CROSSMATCH_CATALOG_FILENAME
+    if filepath_crossmatch_catalog.exists() and not overwrite:
+        log.error("Crossmatch crossmatch_catalog already exists. Returning..")
+        return
+
+    shimwell_catalog = hfits.read_shimwell_catalog(
+        path_shimwell, download=download_shimwell, reduced=True
+    )
+
+    shimwell_catalog["run"] = None
+    shimwell_catalog["cam_col"] = None
+    shimwell_catalog["field"] = None
+
+    shimwell_catalog = shimwell_catalog.astype(
+        {"run": "Int64", "cam_col": "Int64", "field": "Int64"}
+    )
+
+    log.info(
+        f"Writing empty crossmatch crossmatch_catalog to {filepath_crossmatch_catalog}"
+    )
+    shimwell_catalog.to_parquet(filepath_crossmatch_catalog)
+
+
+def load_crossmatch_catalog(path: str):
+    filepath_crossmatch_catalog = Path(path) / CROSSMATCH_CATALOG_FILENAME
+    return pd.read_parquet(filepath_crossmatch_catalog)
+
+
+def fill_sdss_shimwell_crossmatch_catalog(
+    path_crossmatch_catalog: str,
+    shimwell_subset: pd.DataFrame = None,
+    delay_seconds: float = None,
+) -> pd.DataFrame:
+
+    crossmatch_catalog = load_crossmatch_catalog(path_crossmatch_catalog)
+
+    if shimwell_subset is None:
+        crossmatch_catalog_subset = crossmatch_catalog
+    else:
+        crossmatch_catalog_subset = crossmatch_catalog[
+            crossmatch_catalog["Source_Name"].isin(shimwell_subset["Source_Name"])
+        ]
+
+    index_empty_fields = (
+        crossmatch_catalog_subset[SDSS_FIELD_COLUMNS].isnull().any(axis=1)
+    )
+    crossmatch_catalog_unmatched = crossmatch_catalog_subset[index_empty_fields]
+    crossmatch_objects = crossmatch_catalog_unmatched.apply(
+        lambda row: {
+            "Source_Name": row["Source_Name"],
+            "wcs_coordinates": WCSCoordinates(row["RA"], row["DEC"]),
+        },
+        axis=1,
+    ).values.tolist()
+
+    for cmo in crossmatch_objects:
+        source_name, wcs_coordinates = cmo.values()
+
+        log.info(f"Querying sdss fields for Source: {source_name} @ {wcs_coordinates}")
+        _, fields = query_sdss_fields(wcs_coordinates)
+
+        crossmatch_catalog.loc[
+            crossmatch_catalog["Source_Name"] == source_name, SDSS_FIELD_COLUMNS
+        ] = tuple(fields)
+
+        crossmatch_catalog.to_parquet(
+            Path(path_crossmatch_catalog) / CROSSMATCH_CATALOG_FILENAME
+        )
+
+        if delay_seconds:
+            sleep(delay_seconds)

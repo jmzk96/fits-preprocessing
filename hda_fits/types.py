@@ -66,8 +66,8 @@ class MapHeader(NamedTuple):
 
 class SDSSFields(NamedTuple):
     run: int
-    camCol: int
+    cam_col: int
     field: int
 
     def __str__(self):
-        return f"run-{self.run}-camCol-{self.camCol}-field-{self.field}"
+        return f"run-{self.run}-camCol-{self.cam_col}-field-{self.field}"
