@@ -219,7 +219,6 @@ def extract_sdss_fields_from_catalog(crossmatch_catalog: pd.DataFrame) -> List:
 def create_empty_crossmatch_catalog(
     path: str,
     path_shimwell: str,
-    download_shimwell: bool = False,
     overwrite: bool = False,
 ):
 
@@ -228,9 +227,7 @@ def create_empty_crossmatch_catalog(
         log.error("Crossmatch crossmatch_catalog already exists. Returning..")
         return
 
-    shimwell_catalog = hfits.read_shimwell_catalog(
-        path_shimwell, download=download_shimwell, reduced=True
-    )
+    shimwell_catalog = hfits.read_shimwell_catalog(path_shimwell, reduced=True)
 
     shimwell_catalog["run"] = None
     shimwell_catalog["cam_col"] = None

@@ -25,6 +25,7 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 MOSAIC_FILENAME_TEMPLATE = "{}-mosaic.fits"
+SHIMWELL_FILENAME = "LOFAR_HBA_T1_DR1_catalog_v1.0.srl.fits"
 
 
 def column_dtype_byte_to_string(df: pd.DataFrame) -> pd.DataFrame:
@@ -33,7 +34,7 @@ def column_dtype_byte_to_string(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def download_file_streamed(filepath: str, url: str):
+def download_file_streamed(filepath: Union[str, Path], url: str):
     with requests.get(url, stream=True) as r:
         r.raise_for_status()
         with open(filepath, "wb") as f:
@@ -41,21 +42,25 @@ def download_file_streamed(filepath: str, url: str):
                 f.write(chunk)
 
 
-def read_shimwell_catalog(
-    path: str, reduced: bool = False, download: bool = False
-) -> pd.DataFrame:
+def download_shimwell_catalog(path: str):
+    shimwell_catalog_url = f"https://lofar-surveys.org/public/{SHIMWELL_FILENAME}"
+
+    _path = Path(path) / SHIMWELL_FILENAME
+
+    if not _path.exists():
+        download_file_streamed(_path, shimwell_catalog_url)
+
+
+def read_shimwell_catalog(path: str, reduced: bool = False) -> pd.DataFrame:
     """Reads in the shimwell catalog as DataFrame
 
     Additionally converts the byte columns to string such that they
     can be used in filtering actions via str-functions.
     """
-    shimwell_filename = "LOFAR_HBA_T1_DR1_catalog_v1.0.srl.fits"
-    shimwell_catalog_url = f"https://lofar-surveys.org/public/{shimwell_filename}"
 
-    _path = Path(path) / shimwell_filename
-
-    if not _path.exists() and download:
-        download_file_streamed(path, shimwell_catalog_url)
+    _path = Path(path)
+    if not str(_path).endswith(".fits"):
+        _path = _path / SHIMWELL_FILENAME
 
     table = Table.read(_path).to_pandas()
     if reduced:
