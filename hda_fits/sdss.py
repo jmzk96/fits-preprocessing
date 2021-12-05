@@ -1,45 +1,45 @@
 import urllib
 from io import BytesIO
+from pathlib import Path
 from typing import List, Union
 
 import numpy as np
 import pandas as pd
 import requests
+from astropy.io import fits
 from astropy.io.fits.hdu.hdulist import HDUList
 from astropy.io.fits.hdu.image import PrimaryHDU
 from astropy.wcs import WCS
 from reproject import reproject_interp
 
-from .types import RectangleSize, WCSCoordinates
+from .types import RectangleSize, SDSSFields, WCSCoordinates
 
 
-def getSDSSfields(
-    coordinates: WCSCoordinates, size: float
-) -> pd.Dataframe:  # all in degree
-    """
-    This function looks for the corresponding fields (run,camcol and field) in the SDSS Databank and returns a
-    pandas Dataframe with the wanted fields and also some other meta information
-    """
+def get_sdss_fields(
+    coordinates: WCSCoordinates, size: float = 1, number_of_entries: int = 1
+) -> pd.DataFrame:  # all in degree
+
     fmt = "csv"
     default_url = "http://skyserver.sdss3.org/public/en/tools/search/x_sql.aspx"
-    delta = 0.5 * size + 0.13
-    ra_max = coordinates.RA + delta  # * 1.5
-    ra_min = coordinates.RA - delta  # * 1.5
-    dec_max = coordinates.DEC + delta
-    dec_min = coordinates.DEC - delta
+    ra_max = coordinates.RA + size
+    ra_min = coordinates.RA - size
+    dec_max = coordinates.DEC + size
+    dec_min = coordinates.DEC - size
 
-    querry = "SELECT fieldID, run, camCol, field, ra, dec, run, rerun FROM Field "
-    querry += (
-        "WHERE ra BETWEEN "
-        + str(ra_min)
-        + " and "
-        + str(ra_max)
-        + " and dec BETWEEN "
-        + str(dec_min)
-        + " and "
-        + str(dec_max)
-    )
-    params = urllib.parse.urlencode({"cmd": querry, "format": fmt})
+    query = f"""
+        SELECT TOP {number_of_entries} fieldID as field_id, run, camCol as cam_col, field, ra, dec, rerun,
+        ra - {coordinates.RA} as delta_ra,
+        dec - {coordinates.DEC} as delta_dec,
+            (ra - {coordinates.RA}) * (ra - {coordinates.RA}) +
+            (dec - {coordinates.DEC}) * (dec - {coordinates.DEC})
+        as squared_distance
+        FROM Field
+        WHERE ra  BETWEEN {ra_min}  AND {ra_max}
+        AND   dec BETWEEN {dec_min} AND {dec_max}
+        ORDER BY (ra - {coordinates.RA}) * (ra - {coordinates.RA}) + (dec - {coordinates.DEC}) * (dec - {coordinates.DEC})
+        """
+
+    params = urllib.parse.urlencode({"cmd": query, "format": fmt})
     url_opened = urllib.request.urlopen(default_url + "?%s" % params)
     lines = url_opened.readlines()
     return bytes_to_pandas(lines)
@@ -57,36 +57,24 @@ def bytes_to_pandas(list_of_bytes: List) -> pd.DataFrame:
     df_with_proper_headers = pd.DataFrame(df.values[1:], columns=headers)
     df_with_proper_headers = df_with_proper_headers.astype(
         {
+            "field_id": str,
             "run": int,
-            "camCol": int,
+            "cam_col": int,
             "field": int,
             "ra": float,
             "dec": float,
-            "run1": int,
             "rerun": int,
+            "delta_ra": float,
+            "delta_dec": float,
+            "squared_distance": float,
         }
     )
     return df_with_proper_headers
 
 
-def find_closest_field(
-    SDSS_metadata_df: pd.DataFrame, coordinates: WCSCoordinates
-) -> tuple:
-    """
-    This function looks for the closest ra and dec coordinates to the input coordinates
-    and then gives back the corresponding meta data for this coordinate
-    """
-    selected_field = SDSS_metadata_df.iloc[
-        (SDSS_metadata_df["ra"].sub(coordinates.RA).abs().idxmin())
-        & (SDSS_metadata_df["dec"].sub(coordinates.DEC).abs().idxmin())
-    ]
-    run, camcol, field = selected_field.run, selected_field.camcol, selected_field.field
-    return (run, camcol, field)
-
-
-def getSDSSfiles(fieldInfo: Union[tuple, list], band: str, filepath: str):
+def download_sdss_file(fields: SDSSFields, band: str, filepath: Path):
     """Download SDSS file"""
-    run, camcol, field = fieldInfo
+    run, camcol, field = fields
     filename = f"frame-{band}-{run:06d}-{camcol}-{field:04d}.fits.bz2"
     http = f"https://dr12.sdss.org/sas/dr12/boss/photoObj/frames/301/{run}/{camcol}/{filename}"
 
@@ -95,13 +83,28 @@ def getSDSSfiles(fieldInfo: Union[tuple, list], band: str, filepath: str):
         f.write(content)
 
 
-def create_sdss_image_array(
-    r_band: PrimaryHDU, g_band: PrimaryHDU, b_band: PrimaryHDU
-) -> np.ndarray:
-    """
-    This funciton combines the red, green and blue channels from fits files to a optical image.
-    The mean of the channels is therefore calculated.
-    """
+def load_sdss_files(fields: SDSSFields, path: Path, download=True):
+    primary_hdus = []
+    bands = ["r", "g", "i"]
+
+    path = Path(path)
+    dirpath = path / "raw" / str(fields)
+    dirpath.mkdir(parents=True, exist_ok=True)
+
+    for band in bands:
+        filepath = dirpath / f"{fields}-{band}.fits"
+        if not filepath.exists():
+            download_sdss_file(fields=fields, band=band, filepath=filepath)
+        else:
+            print("Already got it")
+
+        hdu = fits.open(filepath)[0]
+        primary_hdus.append(hdu)
+
+    return primary_hdus
+
+
+def create_sdss_image_array(r_band: PrimaryHDU, g_band: PrimaryHDU, b_band: PrimaryHDU):
     r = r_band.data
     g = g_band.data
     b = b_band.data
