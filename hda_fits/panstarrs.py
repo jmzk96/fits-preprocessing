@@ -52,6 +52,10 @@ def get_images_panstarrs(
     if not isinstance(imagetypes, str):
         imagetypes = ",".join(imagetypes)
     # put the positions in an in-memory file object
+    if not isinstance(tra, list):
+        tra = list(tra)
+    if not isinstance(tdec, list):
+        tdec = list(tdec)
     cbuf = StringIO()
     cbuf.write("\n".join(["{} {}".format(ra, dec) for (ra, dec) in zip(tra, tdec)]))
     cbuf.seek(0)
