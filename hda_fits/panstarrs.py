@@ -24,7 +24,7 @@ def get_images_panstarrs(
     tdec: list,
     file_directory: str,
     size: int = 240,
-    filters: str = "grizy",
+    filters: str = "gri",
     format: str = "fits",
     imagetypes: str = "stack",
     return_table_only: bool = False,
@@ -73,8 +73,8 @@ def get_images_panstarrs(
     ]
     if return_table_only:
         return tab
-    else:
-        panstarrs_image_loader(tab, file_directory)
+    elif not return_table_only and file_directory:
+        return panstarrs_image_loader(tab, file_directory)
 
 
 def panstarrs_image_loader(astropy_table: Table, file_directory):
