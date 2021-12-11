@@ -18,7 +18,7 @@ def show_som(
 
     Will currently only support 2D-layouts
     """
-    width, height, _ = som.layout
+    width, height, depth = som.layout
     fig, axes = plt.subplots(height, width, figsize=figsize)
     for i, ax_row in enumerate(axes):
         for j, ax in enumerate(ax_row):
@@ -26,7 +26,11 @@ def show_som(
             ax.set_xticklabels([])
             ax.set_yticklabels([])
             node = som.get_node(i, j)
-            ax.imshow(node[channel, :, :], cmap=cmap)
+
+            if depth > 1:
+                ax.imshow(node[channel, :, :], cmap=cmap)
+            else:
+                ax.imshow(node, cmap=cmap)
 
     fig.subplots_adjust(wspace=0.02, hspace=0.02)
     return fig, axes
