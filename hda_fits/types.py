@@ -18,7 +18,7 @@ class RectangleSize(NamedTuple):
 class Layout(NamedTuple):
     width: int
     height: int
-    depth: int
+    depth: int = 1
 
 
 class PinkHeader(NamedTuple):
