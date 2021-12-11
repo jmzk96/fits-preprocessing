@@ -11,5 +11,6 @@ pre-commit==2.15.0
 pytest==6.2.5
 requests==2.26.0
 reproject==0.8
+seaborn==0.11.2
 types-requests==2.25.11
 typing-extensions==3.10.0.2
