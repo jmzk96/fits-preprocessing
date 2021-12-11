@@ -18,7 +18,7 @@ class RectangleSize(NamedTuple):
 class Layout(NamedTuple):
     width: int
     height: int
-    depth: int
+    depth: int = 1
 
 
 class PinkHeader(NamedTuple):
@@ -62,3 +62,12 @@ class MapHeader(NamedTuple):
     dimensionality: int
     som_layout: Layout
     header_end_offset: int
+
+
+class SDSSFields(NamedTuple):
+    run: int
+    cam_col: int
+    field: int
+
+    def __str__(self):
+        return f"run-{self.run}-camCol-{self.cam_col}-field-{self.field}"

@@ -13,6 +13,11 @@ from astropy.io.fits.hdu.image import PrimaryHDU
 import hda_fits.fits as hfits
 from hda_fits.fits import RectangleSize, WCSCoordinates, load_mosaic
 from hda_fits.logging_config import logging
+from hda_fits.sdss import (
+    create_reprojected_rgb_image,
+    extract_crossmatch_attributes,
+    load_sdss_field_files,
+)
 from hda_fits.types import Layout, PinkHeader
 
 log = logging.getLogger(__name__)
@@ -140,6 +145,21 @@ def write_pink_file_header(
             f.write(
                 struct.pack("i" * 4, number_of_images, 1, image_width, image_height)
             )
+
+
+def write_pink_file_header_multichannel(
+    filepath: str,
+    number_of_images: int,
+    image_layout: Layout,
+    overwrite: bool = False,
+):
+
+    width, height, depth = image_layout
+
+    with open(filepath, "r+b" if overwrite else "wb") as f:
+        f.write(
+            struct.pack("i" * 9, 2, 0, 0, number_of_images, 0, 3, depth, height, width)
+        )
 
 
 def convert_pink_file_header_v1_to_v2(filepath: str):
@@ -398,3 +418,90 @@ def write_catalog_objects_pink_file_v2(
 
     log.info(f"Wrote {number_of_images} images to {filepath}.")
     return catalog_of_written_images
+
+
+def write_crossmatch_catalog_to_pink_file(
+    crossmatch_catalog: pd.DataFrame,
+    filepath: str,
+    sdss_data_path: str,
+    image_size: Union[int, RectangleSize],
+    download: bool = False,
+):
+
+    if isinstance(image_size, int):
+        image_size = RectangleSize(image_height=image_size, image_width=image_size)
+
+    image_height, image_width = image_size
+    crossmatch_attributes = extract_crossmatch_attributes(crossmatch_catalog)
+    number_of_images = len(crossmatch_attributes)
+
+    write_pink_file_header(
+        filepath,
+        number_of_images=number_of_images,
+        image_height=image_height,
+        image_width=image_width,
+    )
+
+    images_written = np.full(len(crossmatch_attributes), True)
+
+    assert images_written.size == crossmatch_catalog.shape[0]
+
+    for i, cma in enumerate(crossmatch_attributes):
+        _, coordinates, fields = cma.values()
+        primary_hdus = load_sdss_field_files(fields, sdss_data_path, download)
+        rgb_image = create_reprojected_rgb_image(
+            primary_hdus=primary_hdus,
+            coordinates=coordinates,
+            image_size=image_size,
+            merge=True,
+            use_lupton_algorithm=False,
+        )
+        if np.isnan(rgb_image).any():
+            images_written[i] = False
+            continue
+
+        write_pink_file_v2_data(filepath=filepath, data=rgb_image.flatten())
+
+    write_pink_file_header(
+        filepath,
+        number_of_images=images_written.sum(),
+        image_height=image_height,
+        image_width=image_width,
+        overwrite=True,
+    )
+
+    return crossmatch_catalog[images_written]
+
+
+def write_multichannel_pink_file(
+    filepath_pink_output: str,
+    filepath_pink_radio: str,
+    filepath_pink_optical: str,
+    channel_weights: List[float],
+):
+    header_radio = read_pink_file_header(filepath_pink_radio)
+    header_optical = read_pink_file_header(filepath_pink_optical)
+
+    layout = Layout(
+        depth=2, height=header_radio.layout.height, width=header_radio.layout.width
+    )
+
+    assert header_radio == header_optical
+
+    # Header schreiben
+    write_pink_file_header_multichannel(
+        filepath=filepath_pink_output,
+        number_of_images=header_radio.number_of_images,
+        image_layout=layout,
+    )
+
+    # Daten lesen und Daten schreiben
+    for i in range(header_radio.number_of_images):
+        image_data_radio = read_pink_file_image(filepath_pink_radio, i).flatten()
+        image_data_optical = read_pink_file_image(filepath_pink_optical, i).flatten()
+
+        image_data_radio /= image_data_radio.sum() * channel_weights[0]
+        image_data_optical /= image_data_optical.sum() * channel_weights[0]
+
+        data = np.concatenate([image_data_radio, image_data_optical])
+        write_pink_file_v2_data(filepath=filepath_pink_output, data=data)

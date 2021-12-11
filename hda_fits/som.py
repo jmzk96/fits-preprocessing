@@ -17,13 +17,9 @@ class SOM:
         self.layout = header.som_layout
         self.nodes = nodes
 
-    def get_node(self, row: int, column: int, channel: int = 0):
+    def get_node(self, row: int, column: int):
         grid_offset = (row * self.layout.width) + column
-        if channel == 0:
-            return self.nodes[grid_offset]
-
-        channel_offset = channel * (self.layout.width * self.layout.height)
-        return self.nodes[channel_offset + grid_offset]
+        return self.nodes[grid_offset]
 
 
 def read_som_file_header_from_stream(file_stream: BinaryIO) -> SOMHeader:

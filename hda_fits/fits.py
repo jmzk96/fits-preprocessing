@@ -6,6 +6,7 @@ meta information as well as creating 2D cutouts of objects of
 interest.
 """
 import os
+from pathlib import Path
 from typing import Optional, Union
 
 import numpy as np
@@ -24,6 +25,7 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 MOSAIC_FILENAME_TEMPLATE = "{}-mosaic.fits"
+SHIMWELL_FILENAME = "LOFAR_HBA_T1_DR1_catalog_v1.0.srl.fits"
 
 
 def column_dtype_byte_to_string(df: pd.DataFrame) -> pd.DataFrame:
@@ -32,15 +34,37 @@ def column_dtype_byte_to_string(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def read_shimwell_catalog(path: str, reduced=False) -> pd.DataFrame:
+def download_file_streamed(filepath: Union[str, Path], url: str):
+    with requests.get(url, stream=True) as r:
+        r.raise_for_status()
+        with open(filepath, "wb") as f:
+            for chunk in r.iter_content(chunk_size=8192):
+                f.write(chunk)
+
+
+def download_shimwell_catalog(path: str):
+    shimwell_catalog_url = f"https://lofar-surveys.org/public/{SHIMWELL_FILENAME}"
+
+    _path = Path(path) / SHIMWELL_FILENAME
+
+    if not _path.exists():
+        download_file_streamed(_path, shimwell_catalog_url)
+
+
+def read_shimwell_catalog(path: str, reduced: bool = False) -> pd.DataFrame:
     """Reads in the shimwell catalog as DataFrame
 
     Additionally converts the byte columns to string such that they
     can be used in filtering actions via str-functions.
     """
-    table = Table.read(path).to_pandas()
+
+    _path = Path(path)
+    if not str(_path).endswith(".fits"):
+        _path = _path / SHIMWELL_FILENAME
+
+    table = Table.read(_path).to_pandas()
     if reduced:
-        table = table.loc[:, ["Source_Name", "RA", "DEC", "Mosaic_ID"]].copy()
+        table = table.loc[:, ["Source_Name", "RA", "DEC", "S_Code", "Mosaic_ID"]].copy()
     return column_dtype_byte_to_string(table)
 
 
@@ -49,17 +73,13 @@ def create_mosaic_filepath(mosaic_id: str, path: str) -> str:
     return os.path.join(path, mosaic_filename)
 
 
-def download_mosaic(mosaic_id: str, path: str = "") -> str:
+def download_mosaic(mosaic_id: str, path: str) -> str:
     mosaic_filename = MOSAIC_FILENAME_TEMPLATE.format(mosaic_id)
     mosaic_filepath = os.path.join(path, mosaic_filename)
 
     mosaic_url = f"https://lofar-surveys.org/public/mosaics/{mosaic_filename}"
 
-    with requests.get(mosaic_url, stream=True) as r:
-        r.raise_for_status()
-        with open(mosaic_filepath, "wb") as f:
-            for chunk in r.iter_content(chunk_size=8192):
-                f.write(chunk)
+    download_file_streamed(path, mosaic_url)
 
     return mosaic_filepath
 
