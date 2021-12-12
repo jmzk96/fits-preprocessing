@@ -141,6 +141,17 @@ def _create_image_with_border_lines(
 
 
 def show_bounding_box(
+    image, factor=2, padding=0, border_proportion=0.05, figsize=(12, 12)
+) -> Tuple[Figure, Axes]:
+    border_coordinates = himg.calculate_bounding_box(
+        image, factor, padding, border_proportion
+    )
+    fig, ax = plt.subplots(1, 1, figsize=figsize)
+    ax = _create_image_with_border_lines(image, border_coordinates, ax)
+    return fig, ax
+
+
+def show_bounding_box_2x2(
     image_optical,
     image_radio,
     factor_std=2,
