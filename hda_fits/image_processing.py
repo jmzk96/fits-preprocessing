@@ -1,3 +1,5 @@
+from typing import Callable, Union
+
 import numpy as np
 
 from hda_fits import pink as hpink
@@ -24,16 +26,31 @@ def calculate_border_coordinates(
     return BoxCoordinates(top=top, right=right, bottom=bottom, left=left)
 
 
+def create_masked_image(
+    image: np.ndarray,
+    mask_coordinates: BoxCoordinates,
+    fill_with: Union[float, Callable] = 0.0,
+) -> np.ndarray:
+
+    if not isinstance(fill_with, float):
+        fill_with = fill_with(image)
+
+    image_masked = np.ones(image.shape) * fill_with
+    top, right, bottom, left = mask_coordinates
+    image_masked[top:bottom, left:right] = image[top:bottom, left:right]
+    return image_masked
+
+
 def create_masked_border(image, border_proportion: float):
-    mask = np.zeros(image.shape)
-    top, right, bottom, left = calculate_border_coordinates(image, border_proportion)
-    mask[top:bottom, left:right] = image[top:bottom, left:right]
-    return mask
+    coordinates = calculate_border_coordinates(image, border_proportion)
+    image_masked = create_masked_image(image, coordinates)
+    return image_masked
 
 
 def calculate_bounding_box(image, factor_std, padding, border_proportion=0.05):
 
     image_masked = create_masked_border(image, border_proportion=border_proportion)
+
     xy = np.argwhere(
         image_masked > (image_masked.std() * factor_std + image_masked.mean())
     )
@@ -43,7 +60,34 @@ def calculate_bounding_box(image, factor_std, padding, border_proportion=0.05):
     left, right = np.min(y) - padding, np.max(y) + padding
     bottom, top = np.max(x) + padding, np.min(x) - padding
 
+    h, w = image.shape
+
+    left = left if left > 0 else 0
+    right = right if right < (w - 1) else (w - 1)
+    top = top if top > 0 else 0
+    bottom = bottom if bottom < (h - 1) else (h - 1)
+
     return BoxCoordinates(top=top, right=right, bottom=bottom, left=left)
+
+
+def create_masked_optical_image(
+    image_optical,
+    image_radio,
+    factor_std,
+    padding,
+    border_proportion=0.05,
+    fill_with: Union[float, Callable] = np.mean,
+):
+    border_coordinates = calculate_bounding_box(
+        image_radio,
+        factor_std=factor_std,
+        padding=padding,
+        border_proportion=border_proportion,
+    )
+    image_optical_masked = create_masked_image(
+        image_optical, border_coordinates, fill_with=fill_with
+    )
+    return image_optical_masked
 
 
 def calculate_snrs_on_pink_file(filepath_pink: str) -> np.ndarray:
