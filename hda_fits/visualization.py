@@ -1,6 +1,7 @@
-from typing import Tuple
+from typing import Callable, Tuple, Union
 
 import matplotlib.pyplot as plt
+import numpy as np
 import seaborn as sns
 from matplotlib.figure import Figure
 from matplotlib.pyplot import Axes
@@ -8,6 +9,8 @@ from matplotlib.pyplot import Axes
 from hda_fits import image_processing as himg
 from hda_fits import map as hmap
 from hda_fits.som import SOM
+
+from .types import BoxCoordinates
 
 
 def show_som(
@@ -105,19 +108,52 @@ def show_snr_histogram(
     return fig, ax
 
 
-def show_bounding_box(
-    image, factor_std=2, padding=0, border_proportion=0.05
-) -> Tuple[Figure, Axes]:
-    radio = image[0]
-    top, right, bottom, left = himg.calculate_bounding_box(
-        radio, factor_std, padding, border_proportion
-    )
+def _create_image_with_border_lines(
+    image: np.ndarray, border_coordinates: BoxCoordinates, ax: Axes
+):
+    top, right, bottom, left = border_coordinates
 
-    fig, ax = plt.subplots(1, 1)
-    ax.imshow(radio)
+    ax.imshow(image)
     ax.axhline(y=bottom, color="white")
     ax.axhline(y=top, color="white")
     ax.axvline(x=left, color="white")
     ax.axvline(x=right, color="white")
 
-    return fig, ax
+    return ax
+
+
+def show_bounding_box(
+    image_optical,
+    image_radio,
+    factor_std=2,
+    padding=0,
+    border_proportion=0.05,
+    fill_with: Union[float, Callable] = np.mean,
+    figsize: Tuple[int, int] = (16, 16),
+) -> Tuple[Figure, Axes]:
+
+    border_coordinates_proportion = himg.calculate_border_coordinates(
+        image_radio, border_proportion
+    )
+
+    border_coordinates = himg.calculate_bounding_box(
+        image_radio,
+        factor_std=factor_std,
+        padding=padding,
+        border_proportion=border_proportion,
+    )
+
+    image_optical_masked = himg.create_masked_image(
+        image_optical, border_coordinates, fill_with=fill_with
+    )
+
+    fig, axes = plt.subplots(nrow=2, ncol=2, figsize=figsize)
+    _create_image_with_border_lines(
+        image_radio, border_coordinates_proportion, axes[0][0]
+    )
+    _create_image_with_border_lines(image_radio, border_coordinates, axes[0][1])
+
+    axes[1][0].imshow(image_optical)
+    axes[1][1].imshow(image_optical_masked)
+
+    return fig, axes
