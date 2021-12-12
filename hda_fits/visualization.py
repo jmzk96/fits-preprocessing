@@ -23,7 +23,8 @@ def show_som(
 
     Will currently only support 2D-layouts
     """
-    width, height, depth = som.layout
+    width, height, _ = som.layout
+    depth = som.channels
     fig, axes = plt.subplots(height, width, figsize=figsize)
     for i, ax_row in enumerate(axes):
         for j, ax in enumerate(ax_row):
@@ -99,7 +100,7 @@ def show_count_heatmap(
 
 
 def show_multichannel_image(
-    filepath: str, image_number: int, figsize=(24, 8)
+    filepath: str, image_number: int, figsize=(24, 8), vmax=1.0
 ) -> Tuple[Figure, Axes]:
     # header = hpink.read_pink_file_header(filepath)
     image = hpink.read_pink_file_image(filepath, image_number=image_number)
@@ -107,18 +108,34 @@ def show_multichannel_image(
     # number_of_channels = header.layout.depth
     fig, axes = plt.subplots(nrows=1, ncols=3, figsize=figsize)
 
-    axes[0].imshow(image[0, :, :], vmin=0.0, vmax=0.015, cmap="jet")
-    axes[1].imshow(image[1, :, :], vmin=0.0, vmax=0.01, cmap="jet")
-    axes[2].imshow(image[1, :, :], vmin=0.0, vmax=0.01, cmap="jet")
+    axes[0].imshow(image[0, :, :], vmin=0.0, vmax=1.0, cmap="jet")
+    axes[1].imshow(image[1, :, :], vmin=0.0, vmax=vmax, cmap="jet")
+    axes[2].imshow(image[1, :, :], vmin=0.0, vmax=vmax, cmap="jet")
     axes[2].contour(image[0, :, :], cmap="jet")
 
     return fig, axes
 
 
-def show_snr_histogram(
-    filepath_pink: str, figsize: Tuple[int, int] = (12, 8), bins: int = None
+def show_image_with_distribution_and_snr(
+    image: np.ndarray, figsize: Tuple[int, int] = (14, 6)
 ) -> Tuple[Figure, Axes]:
-    snr = himg.calculate_snrs_on_pink_file(filepath_pink)
+    fig, ax = plt.subplots(ncols=2, figsize=figsize)
+
+    snr = himg.calculate_signal_to_noise_ratio(image)
+    fig.suptitle(f"SNR: {snr}")
+    ax[0].imshow(image)
+    ax[1].hist(image[image != 0])
+    fig.tight_layout()
+    return fig, ax
+
+
+def show_snr_histogram(
+    filepath_pink: str,
+    channel: int = 0,
+    figsize: Tuple[int, int] = (12, 8),
+    bins: int = None,
+) -> Tuple[Figure, Axes]:
+    snr = himg.calculate_snrs_on_pink_file(filepath_pink, channel)
 
     fig, ax = plt.subplots(1, 1, figsize=figsize)
     ax.hist(snr, bins=bins)
@@ -126,9 +143,9 @@ def show_snr_histogram(
     return fig, ax
 
 
-def _create_image_with_border_lines(
+def create_axes_with_border_lines(
     image: np.ndarray, border_coordinates: BoxCoordinates, ax: Axes
-):
+) -> Axes:
     top, right, bottom, left = border_coordinates
 
     ax.imshow(image)
@@ -147,7 +164,7 @@ def show_bounding_box(
         image, factor, padding, border_proportion
     )
     fig, ax = plt.subplots(1, 1, figsize=figsize)
-    ax = _create_image_with_border_lines(image, border_coordinates, ax)
+    ax = create_axes_with_border_lines(image, border_coordinates, ax)
     return fig, ax
 
 
@@ -183,10 +200,10 @@ def show_bounding_box_2x2(
         for ax in ax_big:
             ax.axis("off")
 
-    _create_image_with_border_lines(
+    create_axes_with_border_lines(
         image_radio, border_coordinates_proportion, axes[0][0]
     )
-    _create_image_with_border_lines(image_radio, border_coordinates, axes[0][1])
+    create_axes_with_border_lines(image_radio, border_coordinates, axes[0][1])
 
     axes[1][0].imshow(image_optical, vmin=0.0, vmax=vmax)
     axes[1][1].imshow(image_optical_masked, vmin=0.0, vmax=vmax)

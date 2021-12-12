@@ -546,9 +546,9 @@ def write_panstarrs_objects_to_pink_file(
 def write_multichannel_pink_file(
     filepath_pink_output: str,
     filepath_pink_radio: str,
-    filepath_pink_optical: str,
-    channel_weights: List[float],
-):
+    filepath_pink_optical: str
+    #    channel_weights: List[float],
+) -> np.ndarray:
     header_radio = read_pink_file_header(filepath_pink_radio)
     header_optical = read_pink_file_header(filepath_pink_optical)
 
@@ -564,6 +564,8 @@ def write_multichannel_pink_file(
         number_of_images=header_radio.number_of_images,
         image_layout=layout,
     )
+
+    images_written = np.full(header_radio.number_of_images, True)
 
     # Daten lesen und Daten schreiben
     for i in range(header_radio.number_of_images):
@@ -583,10 +585,28 @@ def write_multichannel_pink_file(
         image_data_optical = denoise_cutouts_from_mean(image_optical_masked.flatten())
         image_data_optical = hfits.min_max(image_data_optical)
 
+        if not np.isfinite(image_data_optical).all():
+            log.warning("INF or NaN in optical image. Skipping..")
+            images_written[i] = False
+            continue
+
         image_data_radio = image_radio.flatten()
+
+        if not np.isfinite(image_data_radio).all():
+            log.warning("INF or NaN in radio image. Skipping..")
+            images_written[i] = False
 
         # image_data_radio /= image_data_radio.sum() * channel_weights[0]
         # image_data_optical /= image_data_optical.sum() * channel_weights[0]
 
         data = np.concatenate([image_data_radio, image_data_optical])
         write_pink_file_v2_data(filepath=filepath_pink_output, data=data)
+
+    write_pink_file_header_multichannel(
+        filepath=filepath_pink_output,
+        number_of_images=images_written.sum(),
+        image_layout=layout,
+        overwrite=True,
+    )
+
+    return images_written
