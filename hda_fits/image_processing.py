@@ -49,7 +49,9 @@ def create_masked_border(
     return image_masked, coordinates
 
 
-def calculate_bounding_box(image, factor_std, padding, border_proportion=0.05):
+def calculate_bounding_box(
+    image, factor_std, padding, border_proportion=0.05
+) -> BoxCoordinates:
 
     image_masked, coordinates_proportion = create_masked_border(
         image, border_proportion=border_proportion
@@ -85,7 +87,7 @@ def create_masked_optical_image(
     padding,
     border_proportion=0.05,
     fill_with: Union[float, Callable] = np.mean,
-):
+) -> np.ndarray:
     border_coordinates = calculate_bounding_box(
         image_radio,
         factor_std=factor_std,
@@ -98,14 +100,16 @@ def create_masked_optical_image(
     return image_optical_masked
 
 
-def calculate_snrs_on_pink_file(filepath_pink: str) -> np.ndarray:
+def calculate_snrs_on_pink_file(filepath_pink: str, channel: int = 0) -> np.ndarray:
     header = hpink.read_pink_file_header(filepath_pink)
-    number_of_images = header.number_of_images
+    channels = header.layout.depth
 
+    number_of_images = header.number_of_images
     snrs = np.empty(number_of_images)
 
     for i in range(number_of_images):
         image = hpink.read_pink_file_image(filepath_pink, i)
+        image = image if channels == 1 else image[channel, :, :]
         snrs[i] = calculate_signal_to_noise_ratio(image)
 
     return snrs
