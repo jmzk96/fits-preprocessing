@@ -426,6 +426,7 @@ def write_crossmatch_catalog_to_pink_file(
     sdss_data_path: str,
     image_size: Union[int, RectangleSize],
     download: bool = False,
+    fill_nan: bool = False,
 ):
 
     if isinstance(image_size, int):
@@ -456,9 +457,13 @@ def write_crossmatch_catalog_to_pink_file(
             merge=True,
             use_lupton_algorithm=False,
         )
+
         if np.isnan(rgb_image).any():
-            images_written[i] = False
-            continue
+            if fill_nan:
+                rgb_image = np.nan_to_num(rgb_image, rgb_image.min())
+            else:
+                images_written[i] = False
+                continue
 
         write_pink_file_v2_data(filepath=filepath, data=rgb_image.flatten())
 
