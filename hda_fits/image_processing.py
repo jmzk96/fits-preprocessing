@@ -1,5 +1,7 @@
 import numpy as np
 
+from hda_fits import pink as hpink
+
 from .logging_config import logging
 from .types import BoxCoordinates
 
@@ -42,3 +44,16 @@ def calculate_bounding_box(image, factor_std, padding, border_proportion=0.05):
     bottom, top = np.max(x) + padding, np.min(x) - padding
 
     return BoxCoordinates(top=top, right=right, bottom=bottom, left=left)
+
+
+def calculate_snrs_on_pink_file(filepath_pink: str) -> np.ndarray:
+    header = hpink.read_pink_file_header(filepath_pink)
+    number_of_images = header.number_of_images
+
+    snrs = np.empty(number_of_images)
+
+    for i in range(number_of_images):
+        image = hpink.read_pink_file_image(filepath_pink, i)
+        snrs[i] = calculate_signal_to_noise_ratio(image)
+
+    return snrs
