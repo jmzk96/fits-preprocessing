@@ -1,4 +1,4 @@
-from typing import Callable, Union
+from typing import Callable, Tuple, Union
 
 import numpy as np
 
@@ -41,19 +41,27 @@ def create_masked_image(
     return image_masked
 
 
-def create_masked_border(image, border_proportion: float):
+def create_masked_border(
+    image, border_proportion: float
+) -> Tuple[np.ndarray, BoxCoordinates]:
     coordinates = calculate_border_coordinates(image, border_proportion)
     image_masked = create_masked_image(image, coordinates)
-    return image_masked
+    return image_masked, coordinates
 
 
 def calculate_bounding_box(image, factor_std, padding, border_proportion=0.05):
 
-    image_masked = create_masked_border(image, border_proportion=border_proportion)
+    image_masked, coordinates_proportion = create_masked_border(
+        image, border_proportion=border_proportion
+    )
 
     xy = np.argwhere(
         image_masked > (image_masked.std() * factor_std + image_masked.mean())
     )
+
+    if xy.size == 0:
+        return coordinates_proportion
+
     x = xy[:, 0]
     y = xy[:, 1]
 
