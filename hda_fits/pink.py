@@ -11,7 +11,13 @@ import pandas as pd
 from astropy.io.fits.hdu.image import PrimaryHDU
 
 import hda_fits.fits as hfits
-from hda_fits.fits import RectangleSize, WCSCoordinates, load_mosaic
+from hda_fits import image_processing as himg
+from hda_fits.fits import (
+    RectangleSize,
+    WCSCoordinates,
+    denoise_cutouts_from_mean,
+    load_mosaic,
+)
 from hda_fits.logging_config import logging
 from hda_fits.sdss import (
     create_reprojected_rgb_image,
@@ -502,8 +508,23 @@ def write_multichannel_pink_file(
 
     # Daten lesen und Daten schreiben
     for i in range(header_radio.number_of_images):
-        image_data_radio = read_pink_file_image(filepath_pink_radio, i).flatten()
-        image_data_optical = read_pink_file_image(filepath_pink_optical, i).flatten()
+        image_radio = read_pink_file_image(filepath_pink_radio, i)
+        image_optical = read_pink_file_image(filepath_pink_optical, i)
+
+        # Transformations
+        image_optical_masked = himg.create_masked_optical_image(
+            image_optical=image_optical,
+            image_radio=image_radio,
+            factor_std=5,
+            padding=5,
+            border_proportion=0.15,
+            fill_with=np.mean,
+        )
+
+        image_data_optical = denoise_cutouts_from_mean(image_optical_masked.flatten())
+        image_data_optical = hfits.min_max(image_data_optical)
+
+        image_data_radio = image_radio.flatten()
 
         # image_data_radio /= image_data_radio.sum() * channel_weights[0]
         # image_data_optical /= image_data_optical.sum() * channel_weights[0]

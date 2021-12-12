@@ -207,3 +207,15 @@ def denoise_cutouts_from_mean(cutout_flatarray, sigma=1.5):
     othreshold = mean + sigma * std
     cutout_flatarray[cutout_flatarray < othreshold] = 0.0
     return cutout_flatarray
+
+
+def min_max(data: np.ndarray):
+    # log.debug("Ich bin in der min_max")
+    dmax, dmin = data.max(), data.min()
+    return (data - dmin) / (dmax - dmin)
+
+
+def log_scale(data: np.ndarray, eps: float = 0.001):
+    # log.info("Ich bin in der logfunktion")
+    min_scaled_array = data - data.min() + eps
+    return np.log(min_scaled_array)
