@@ -460,7 +460,7 @@ def write_crossmatch_catalog_to_pink_file(
 
         if np.isnan(rgb_image).any():
             if fill_nan:
-                rgb_image = np.nan_to_num(rgb_image, rgb_image.min())
+                rgb_image = np.nan_to_num(rgb_image, rgb_image.mean())
             else:
                 images_written[i] = False
                 continue
@@ -505,8 +505,8 @@ def write_multichannel_pink_file(
         image_data_radio = read_pink_file_image(filepath_pink_radio, i).flatten()
         image_data_optical = read_pink_file_image(filepath_pink_optical, i).flatten()
 
-        image_data_radio /= image_data_radio.sum() * channel_weights[0]
-        image_data_optical /= image_data_optical.sum() * channel_weights[0]
+        # image_data_radio /= image_data_radio.sum() * channel_weights[0]
+        # image_data_optical /= image_data_optical.sum() * channel_weights[0]
 
         data = np.concatenate([image_data_radio, image_data_optical])
         write_pink_file_v2_data(filepath=filepath_pink_output, data=data)

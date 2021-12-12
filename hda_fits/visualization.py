@@ -8,6 +8,7 @@ from matplotlib.pyplot import Axes
 
 from hda_fits import image_processing as himg
 from hda_fits import map as hmap
+from hda_fits import pink as hpink
 from hda_fits.som import SOM
 
 from .types import BoxCoordinates
@@ -97,6 +98,23 @@ def show_count_heatmap(
     return fig, ax
 
 
+def show_multichannel_image(
+    filepath: str, image_number: int, figsize=(24, 8)
+) -> Tuple[Figure, Axes]:
+    # header = hpink.read_pink_file_header(filepath)
+    image = hpink.read_pink_file_image(filepath, image_number=image_number)
+
+    # number_of_channels = header.layout.depth
+    fig, axes = plt.subplots(nrows=1, ncols=3, figsize=figsize)
+
+    axes[0].imshow(image[0, :, :], vmin=0.0, vmax=0.015, cmap="jet")
+    axes[1].imshow(image[1, :, :], vmin=0.0, vmax=0.01, cmap="jet")
+    axes[2].imshow(image[1, :, :], vmin=0.0, vmax=0.01, cmap="jet")
+    axes[2].contour(image[0, :, :], cmap="jet")
+
+    return fig, axes
+
+
 def show_snr_histogram(
     filepath_pink: str, figsize: Tuple[int, int] = (12, 8), bins: int = None
 ) -> Tuple[Figure, Axes]:
@@ -130,6 +148,7 @@ def show_bounding_box(
     border_proportion=0.05,
     fill_with: Union[float, Callable] = np.mean,
     figsize: Tuple[int, int] = (16, 16),
+    vmax: float = 0.05,
 ) -> Tuple[Figure, Axes]:
 
     border_coordinates_proportion = himg.calculate_border_coordinates(
@@ -147,13 +166,18 @@ def show_bounding_box(
         image_optical, border_coordinates, fill_with=fill_with
     )
 
-    fig, axes = plt.subplots(nrow=2, ncol=2, figsize=figsize)
+    fig, axes = plt.subplots(nrows=2, ncols=2, figsize=figsize)
+
+    for ax_big in axes:
+        for ax in ax_big:
+            ax.axis("off")
+
     _create_image_with_border_lines(
         image_radio, border_coordinates_proportion, axes[0][0]
     )
     _create_image_with_border_lines(image_radio, border_coordinates, axes[0][1])
 
-    axes[1][0].imshow(image_optical)
-    axes[1][1].imshow(image_optical_masked)
+    axes[1][0].imshow(image_optical, vmin=0.0, vmax=vmax)
+    axes[1][1].imshow(image_optical_masked, vmin=0.0, vmax=vmax)
 
     return fig, axes
