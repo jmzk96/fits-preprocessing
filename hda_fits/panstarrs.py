@@ -88,8 +88,19 @@ def get_images_panstarrs(
 
 
 def panstarrs_image_loader(
-    astropy_table: Table, file_directory, seperate_channels: bool = True
+    astropy_table: Table,
+    file_directory: str,
+    seperate_channels: bool = True,
+    sleep_time: int = 60,
 ):
+    """
+    This function takes in an Astropy Table and saves the files from the Pan STARRS API as
+    FITS files in a selected file directory.
+    If filepath to FITS file exists, the file is skipped and not downloaded.
+    Seperate Channels eg. grizy can be downloaded or a combination of theses channels
+    can be calculated and downloaded as a single image.
+    The sleep time for the requests.get function can also be manually set.
+    """
     t0 = time.time()
     number_of_missing_images = 0
     number_of_loading_images = 0
@@ -117,7 +128,7 @@ def panstarrs_image_loader(
                             )
                     else:
                         number_of_loading_images = 0
-                        sleep(60)
+                        sleep(sleep_time)
                         r = requests.get(url)
                         if r.status_code == 200:
                             with open(filepath, "wb") as fitsfile:
@@ -176,7 +187,7 @@ def panstarrs_image_loader(
                                 )
                         else:
                             number_of_loading_images = 0
-                            sleep(60)
+                            sleep(sleep_time)
                             r = requests.get(url)
                             if r.status_code == 200:
 
