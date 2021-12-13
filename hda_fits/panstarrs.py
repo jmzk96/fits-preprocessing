@@ -96,10 +96,14 @@ def panstarrs_image_loader(
     """
     This function takes in an Astropy Table and saves the files from the Pan STARRS API as
     FITS files in a selected file directory.
+
     If filepath to FITS file exists, the file is skipped and not downloaded.
     Seperate Channels eg. grizy can be downloaded or a combination of theses channels
     can be calculated and downloaded as a single image.
     The sleep time for the requests.get function can also be manually set.
+
+    Returns a saved FITS files saved in specified file_directory and with format:
+    {Source_Name}_filter={filter}.fits for seperate channels and {Source_Name}.fits when all channels are combined
     """
     t0 = time.time()
     number_of_missing_images = 0
