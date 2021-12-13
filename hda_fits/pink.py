@@ -546,8 +546,8 @@ def write_panstarrs_objects_to_pink_file(
 def write_multichannel_pink_file(
     filepath_pink_output: str,
     filepath_pink_radio: str,
-    filepath_pink_optical: str
-    #    channel_weights: List[float],
+    filepath_pink_optical: str,
+    channel_weights: List[float] = [1.0, 1.0],
 ) -> np.ndarray:
     header_radio = read_pink_file_header(filepath_pink_radio)
     header_optical = read_pink_file_header(filepath_pink_optical)
@@ -595,9 +595,10 @@ def write_multichannel_pink_file(
         if not np.isfinite(image_data_radio).all():
             log.warning("INF or NaN in radio image. Skipping..")
             images_written[i] = False
+            continue
 
-        # image_data_radio /= image_data_radio.sum() * channel_weights[0]
-        # image_data_optical /= image_data_optical.sum() * channel_weights[0]
+        image_data_radio /= image_data_radio.sum() * channel_weights[0]
+        image_data_optical /= image_data_optical.sum() * channel_weights[1]
 
         data = np.concatenate([image_data_radio, image_data_optical])
         write_pink_file_v2_data(filepath=filepath_pink_output, data=data)
