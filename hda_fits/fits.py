@@ -205,8 +205,9 @@ def denoise_cutouts_from_mean(cutout_flatarray, sigma=1.5):
     std = np.std(cutout_flatarray)
     mean = np.mean(cutout_flatarray)
     othreshold = mean + sigma * std
-    cutout_flatarray[cutout_flatarray < othreshold] = 0.0
-    return cutout_flatarray
+    output_array = cutout_flatarray.copy()
+    output_array[output_array < othreshold] = 0.0
+    return output_array
 
 
 def min_max(data: np.ndarray):
