@@ -123,7 +123,7 @@ def show_image_with_distribution_and_snr(
 
     snr = himg.calculate_signal_to_noise_ratio(image)
     fig.suptitle(f"SNR: {snr}")
-    ax[0].imshow(image)
+    ax[0].imshow(image, cmap="jet")
     ax[1].hist(image[image != 0])
     fig.tight_layout()
     return fig, ax
@@ -148,7 +148,7 @@ def create_axes_with_border_lines(
 ) -> Axes:
     top, right, bottom, left = border_coordinates
 
-    ax.imshow(image)
+    ax.imshow(image, cmap="jet")
     ax.axhline(y=bottom, color="white")
     ax.axhline(y=top, color="white")
     ax.axvline(x=left, color="white")
@@ -205,7 +205,7 @@ def show_bounding_box_2x2(
     )
     create_axes_with_border_lines(image_radio, border_coordinates, axes[0][1])
 
-    axes[1][0].imshow(image_optical, vmin=0.0, vmax=vmax)
-    axes[1][1].imshow(image_optical_masked, vmin=0.0, vmax=vmax)
+    axes[1][0].imshow(image_optical, vmin=0.0, vmax=vmax, cmap="jet")
+    axes[1][1].imshow(image_optical_masked, vmin=0.0, vmax=vmax, cmap="jet")
 
     return fig, axes
