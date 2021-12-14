@@ -229,6 +229,7 @@ def panstarrs_image_loader(
             )
         )
 
+
 def load_panstarrs_file(
     catalog: pd.DataFrame, source_name: str, path: str, download: bool = False
 ):
