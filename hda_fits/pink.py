@@ -493,12 +493,15 @@ def write_panstarrs_objects_to_pink_file(
         image_height=image_height,
         image_width=image_width,
     )
+    images_written = np.full(len(panstarrs_catalog), True)
+
+    assert images_written.size == panstarrs_catalog.shape[0]
 
     list_of_source = panstarrs_catalog.Source_Name.tolist()
     list_of_ra = panstarrs_catalog.RA.tolist()
     list_of_dec = panstarrs_catalog.DEC.tolist()
 
-    for source, ra, dec in zip(list_of_source, list_of_ra, list_of_dec):
+    for i, (source, ra, dec) in enumerate(zip(list_of_source, list_of_ra, list_of_dec)):
         primary_hdus = ps.load_panstarrs_file(
             panstarrs_catalog, source, panstarrs_data_path
         )
@@ -509,7 +512,18 @@ def write_panstarrs_objects_to_pink_file(
             merge=True,
             use_lupton_algorithm=False,
         )
+        if np.isnan(rgb_image).any():
+            images_written[i] = False
+            continue
         write_pink_file_v2_data(filepath=filepath, data=rgb_image.flatten())
+
+    write_pink_file_header(
+        filepath,
+        number_of_images=images_written,
+        image_height=image_height,
+        image_width=image_width,
+    )
+    return panstarrs_catalog[images_written]
 
 
 def write_multichannel_pink_file(
