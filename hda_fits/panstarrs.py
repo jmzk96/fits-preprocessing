@@ -72,13 +72,14 @@ def get_images_panstarrs(
         for (filename, ra, dec) in zip(tab["filename"], tab["ra"], tab["dec"])
     ]
     catalog_subset = catalog[["Source_Name", "RA", "DEC"]]
-    catalog_subset["RA"] = catalog_subset.loc[:, "RA"].round(6)
-    catalog_subset["DEC"] = catalog_subset.loc[:, "DEC"].round(6)
+    catalog_copy = catalog_subset.copy()
+    catalog_copy["RA"] = catalog_copy.loc[:, "RA"].round(6)
+    catalog_copy["DEC"] = catalog_copy.loc[:, "DEC"].round(6)
     tab = tab.to_pandas()
     tab.rename(columns={"ra": "RA", "dec": "DEC"}, inplace=True)
     tab["RA"] = tab.loc[:, "RA"].round(6)
     tab["DEC"] = tab.loc[:, "DEC"].round(6)
-    merged = tab.merge(catalog_subset, left_on=["RA", "DEC"], right_on=["RA", "DEC"])
+    merged = tab.merge(catalog_copy, left_on=["RA", "DEC"], right_on=["RA", "DEC"])
     if return_table_only:
         return Table.from_pandas(merged)
     elif not return_table_only and file_directory:
@@ -227,3 +228,30 @@ def panstarrs_image_loader(
                 len(aggregated_table_by_coords),
             )
         )
+
+def load_panstarrs_file(
+    catalog: pd.DataFrame, source_name: str, path: str, download: bool = False
+):
+    """
+    Load Pan-STARRS files in specified path, if download is set to True, the function will try to download the FITS files
+    through the Pan-STARRS API. A valid source_name is required such as  ILTJ122003.20+490932.9 from the LoTTs catalog
+
+    this function only loads fits files of single channels and not whole images.
+    """
+    primary_hdus = []
+    bands = ["r", "g", "i"]
+    for band in bands:
+        filepath = os.path.join(path, f"{source_name}_filter={band}.fits")
+        if not filepath.exists() and download:
+            catalog_download = catalog[catalog.Source_Name == source_name]
+            get_images_panstarrs(catalog_download, path)
+            primary_hdu = fits.open(filepath)[0]
+            primary_hdus.append(primary_hdu)
+        try:
+            log.debug("Loading {filepath}")
+            primary_hdu = fits.open(filepath)[0]
+            primary_hdus.append(primary_hdu)
+        except FileNotFoundError as e:
+            log.warning(e)
+            return None
+    return primary_hdus
