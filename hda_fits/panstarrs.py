@@ -243,7 +243,7 @@ def load_panstarrs_file(
     bands = ["r", "g", "i"]
     for band in bands:
         filepath = os.path.join(path, f"{source_name}_filter={band}.fits")
-        if not filepath.exists() and download:
+        if not os.path.exists(filepath) and download:
             catalog_download = catalog[catalog.Source_Name == source_name]
             get_images_panstarrs(catalog_download, path)
             primary_hdu = fits.open(filepath)[0]

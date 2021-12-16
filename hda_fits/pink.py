@@ -503,7 +503,7 @@ def write_panstarrs_objects_to_pink_file(
 
     for i, (source, ra, dec) in enumerate(zip(list_of_source, list_of_ra, list_of_dec)):
         primary_hdus = ps.load_panstarrs_file(
-            panstarrs_catalog, source, panstarrs_data_path
+            panstarrs_catalog, source, panstarrs_data_path, download
         )
         rgb_image = create_reprojected_rgb_image(
             primary_hdus=primary_hdus,
@@ -519,9 +519,10 @@ def write_panstarrs_objects_to_pink_file(
 
     write_pink_file_header(
         filepath,
-        number_of_images=images_written,
+        number_of_images=images_written.sum(),
         image_height=image_height,
         image_width=image_width,
+        overwrite=True,
     )
     return panstarrs_catalog[images_written]
 
