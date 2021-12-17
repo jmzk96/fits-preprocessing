@@ -58,7 +58,7 @@ def get_images_panstarrs(
     tdec = catalog["DEC"].tolist()
     tsource = catalog["Source_Name"].tolist()
     n_bands = len(filters)
-    list_of_lists_source = [(f" {i} "*n_bands).split() for i in tsource]
+    list_of_lists_source = [(f" {i} " * n_bands).split() for i in tsource]
     cbuf = StringIO()
     cbuf.write("\n".join(["{} {}".format(ra, dec) for (ra, dec) in zip(tra, tdec)]))
     cbuf.seek(0)
@@ -75,7 +75,6 @@ def get_images_panstarrs(
         for (filename, ra, dec) in zip(tab["filename"], tab["ra"], tab["dec"])
     ]
     tab["Source_Name"] = [val for sublist in list_of_lists_source for val in sublist]
-    
     assert len(tab["url"]) == len(tab["Source_Name"])
 
     tab = tab.to_pandas()
@@ -84,9 +83,7 @@ def get_images_panstarrs(
     if return_table_only:
         return Table.from_pandas(tab)
     elif not return_table_only and file_directory:
-        return panstarrs_image_loader(
-            Table.from_pandas(tab), file_directory, **kwargs
-        )
+        return panstarrs_image_loader(Table.from_pandas(tab), file_directory, **kwargs)
 
 
 def panstarrs_image_loader(
