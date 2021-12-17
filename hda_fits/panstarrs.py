@@ -56,6 +56,9 @@ def get_images_panstarrs(
     # put the positions in an in-memory file object
     tra = catalog["RA"].tolist()
     tdec = catalog["DEC"].tolist()
+    tsource = catalog["Source_Name"].tolist()
+    n_bands = len(filters)
+    list_of_lists_source = [(f" {i} "*n_bands).split() for i in tsource]
     cbuf = StringIO()
     cbuf.write("\n".join(["{} {}".format(ra, dec) for (ra, dec) in zip(tra, tdec)]))
     cbuf.seek(0)
@@ -71,20 +74,18 @@ def get_images_panstarrs(
         "{}&ra={}&dec={}&red={}".format(urlbase, ra, dec, filename)
         for (filename, ra, dec) in zip(tab["filename"], tab["ra"], tab["dec"])
     ]
-    catalog_subset = catalog[["Source_Name", "RA", "DEC"]]
-    catalog_copy = catalog_subset.copy()
-    catalog_copy["RA"] = catalog_copy.loc[:, "RA"].round(6)
-    catalog_copy["DEC"] = catalog_copy.loc[:, "DEC"].round(6)
+    tab["Source_Name"] = [val for sublist in list_of_lists_source for val in sublist]
+    
+    assert len(tab["url"]) == len(tab["Source_Name"])
+
     tab = tab.to_pandas()
     tab.rename(columns={"ra": "RA", "dec": "DEC"}, inplace=True)
-    tab["RA"] = tab.loc[:, "RA"].round(6)
-    tab["DEC"] = tab.loc[:, "DEC"].round(6)
-    merged = tab.merge(catalog_copy, left_on=["RA", "DEC"], right_on=["RA", "DEC"])
+
     if return_table_only:
-        return Table.from_pandas(merged)
+        return Table.from_pandas(tab)
     elif not return_table_only and file_directory:
         return panstarrs_image_loader(
-            Table.from_pandas(merged), file_directory, **kwargs
+            Table.from_pandas(tab), file_directory, **kwargs
         )
 
 
@@ -249,7 +250,7 @@ def load_panstarrs_file(
             primary_hdu = fits.open(filepath)[0]
             primary_hdus.append(primary_hdu)
         try:
-            log.debug("Loading {filepath}")
+            log.debug(f"Loading {filepath}")
             primary_hdu = fits.open(filepath)[0]
             primary_hdus.append(primary_hdu)
         except FileNotFoundError as e:
