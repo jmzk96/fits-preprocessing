@@ -24,7 +24,7 @@ fitscut = "https://ps1images.stsci.edu/cgi-bin/fitscut.cgi"
 def get_images_panstarrs(
     catalog: pd.DataFrame,
     file_directory: str,
-    size: int = 240,
+    size: int = 1000,
     filters: str = "gri",
     format: str = "fits",
     imagetypes: str = "stack",
