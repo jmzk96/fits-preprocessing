@@ -58,7 +58,7 @@ def get_images_panstarrs(
     tdec = catalog["DEC"].tolist()
     tsource = catalog["Source_Name"].tolist()
     n_bands = len(filters)
-    list_of_lists_source = [(f" {i} " * n_bands).split() for i in tsource]
+
     cbuf = StringIO()
     cbuf.write("\n".join(["{} {}".format(ra, dec) for (ra, dec) in zip(tra, tdec)]))
     cbuf.seek(0)
@@ -74,16 +74,40 @@ def get_images_panstarrs(
         "{}&ra={}&dec={}&red={}".format(urlbase, ra, dec, filename)
         for (filename, ra, dec) in zip(tab["filename"], tab["ra"], tab["dec"])
     ]
-    tab["Source_Name"] = [val for sublist in list_of_lists_source for val in sublist]
-    assert len(tab["url"]) == len(tab["Source_Name"])
-
-    tab = tab.to_pandas()
-    tab.rename(columns={"ra": "RA", "dec": "DEC"}, inplace=True)
+    pandas_table = Table.to_pandas(tab)
+    pandas_table.rename(columns={"ra": "RA", "dec": "DEC"}, inplace=True)
+    grouped = pandas_table.groupby(["RA", "DEC"], sort=False).agg(list)
+    grouped.reset_index(inplace=True)
+    grouped["number_list"] = grouped.apply(lambda x: len(x["filter"]), axis=1)
+    grouped["Source_Name"] = tsource
+    if not grouped[grouped["number_list"] != n_bands].empty:
+        log.warning(
+            "Following objects with their coordinates have missing filters (RA,DEC) {}".format(
+                grouped[grouped["number_list"] != n_bands].index.tolist()
+            )
+        )
+        log.warning(
+            "Source Names are: {}".format(
+                grouped[grouped["number_list"] != n_bands].Source_Name.tolist()
+            )
+        )
+        grouped_copy = grouped[grouped["number_list"] == n_bands].copy()
+        exploded = grouped_copy.explode(["url", "filter"])
+        if return_table_only:
+            return Table.from_pandas(exploded)
+        elif not return_table_only and file_directory:
+            return panstarrs_image_loader(
+                Table.from_pandas(exploded), file_directory, **kwargs
+            )
+    exploded = grouped.explode(["url", "filter"])
 
     if return_table_only:
-        return Table.from_pandas(tab)
+        return Table.from_pandas(exploded)
     elif not return_table_only and file_directory:
-        return panstarrs_image_loader(Table.from_pandas(tab), file_directory, **kwargs)
+        print(exploded)
+        return panstarrs_image_loader(
+            Table.from_pandas(exploded), file_directory, **kwargs
+        )
 
 
 def panstarrs_image_loader(
@@ -149,7 +173,7 @@ def panstarrs_image_loader(
                                     not added to panSTARRS file stream"
                     )
         log.info(
-            "{:.1f} s: loaded {} FITS files for {} positions at different bands".format(
+            "{:.1f} s: loaded {} FITS files from {} expected FITS files at different bands".format(
                 time.time() - t0,
                 len(astropy_table) - number_of_missing_images,
                 len(astropy_table),
@@ -220,7 +244,7 @@ def panstarrs_image_loader(
                 fits.writeto(filepath, image_info, header, overwrite=True)
 
         log.info(
-            "{:.1f} s: loaded {} FITS files for {} positions".format(
+            "{:.1f} s: loaded  {} FITS files from {} expected FITS files at different bands".format(
                 time.time() - t0,
                 len(aggregated_table_by_coords) - number_of_missing_images,
                 len(aggregated_table_by_coords),
