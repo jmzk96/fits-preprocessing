@@ -87,11 +87,14 @@ def get_images_panstarrs(
             )
         )
         log.warning(
-            "Source Names are: {}".format(
+            "Source Names with missing filters are: {}".format(
                 grouped[grouped["number_list"] != n_bands].Source_Name.tolist()
             )
         )
         grouped_copy = grouped[grouped["number_list"] == n_bands].copy()
+        if grouped_copy.empty:
+            log.warning("Source doesnt have all {} bands ".format(n_bands))
+            return None
         exploded = grouped_copy.explode(["url", "filter"])
         if return_table_only:
             return Table.from_pandas(exploded)
@@ -104,7 +107,6 @@ def get_images_panstarrs(
     if return_table_only:
         return Table.from_pandas(exploded)
     elif not return_table_only and file_directory:
-        print(exploded)
         return panstarrs_image_loader(
             Table.from_pandas(exploded), file_directory, **kwargs
         )
@@ -268,8 +270,12 @@ def load_panstarrs_file(
         if not os.path.exists(filepath) and download:
             catalog_download = catalog[catalog.Source_Name == source_name]
             get_images_panstarrs(catalog_download, path)
-            primary_hdu = fits.open(filepath)[0]
-            primary_hdus.append(primary_hdu)
+            try:
+                primary_hdu = fits.open(filepath)[0]
+                primary_hdus.append(primary_hdu)
+            except FileNotFoundError as e:
+                log.debug(e)
+                return None
         try:
             log.debug(f"Loading {filepath}")
             primary_hdu = fits.open(filepath)[0]

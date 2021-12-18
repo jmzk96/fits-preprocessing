@@ -502,20 +502,25 @@ def write_panstarrs_objects_to_pink_file(
     list_of_dec = panstarrs_catalog.DEC.tolist()
 
     for i, (source, ra, dec) in enumerate(zip(list_of_source, list_of_ra, list_of_dec)):
-        primary_hdus = ps.load_panstarrs_file(
-            panstarrs_catalog, source, panstarrs_data_path, download
-        )
-        rgb_image = create_reprojected_rgb_image(
-            primary_hdus=primary_hdus,
-            coordinates=WCSCoordinates(ra, dec),
-            image_size=image_size,
-            merge=True,
-            use_lupton_algorithm=False,
-        )
-        if np.isnan(rgb_image).any():
+        try:
+            primary_hdus = ps.load_panstarrs_file(
+                panstarrs_catalog, source, panstarrs_data_path, download
+            )
+
+            rgb_image = create_reprojected_rgb_image(
+                primary_hdus=primary_hdus,
+                coordinates=WCSCoordinates(ra, dec),
+                image_size=image_size,
+                merge=True,
+                use_lupton_algorithm=False,
+            )
+            if np.isnan(rgb_image).any():
+                images_written[i] = False
+                continue
+            write_pink_file_v2_data(filepath=filepath, data=rgb_image.flatten())
+        except Exception as e:
+            log.debug(e)
             images_written[i] = False
-            continue
-        write_pink_file_v2_data(filepath=filepath, data=rgb_image.flatten())
 
     write_pink_file_header(
         filepath,
