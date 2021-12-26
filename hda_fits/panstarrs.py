@@ -82,10 +82,12 @@ def get_images_panstarrs(
     grouped["Source_Name"] = tsource
     if not grouped[grouped["number_list"] != n_bands].empty:
         log.warning(
-            "Following objects with their coordinates have missing filters (RA,DEC) {}".format(
-                grouped[grouped["number_list"] != n_bands].index.tolist()
+            "Following objects with their coordinates have missing filters; RA:{} DEC:{}".format(
+                grouped[grouped["number_list"] != n_bands].RA.tolist(),
+                grouped[grouped["number_list"] != n_bands].DEC.tolist(),
             )
         )
+
         log.warning(
             "Source Names with missing filters are: {}".format(
                 grouped[grouped["number_list"] != n_bands].Source_Name.tolist()

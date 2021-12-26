@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import pytest
 from astropy.io import fits
 from astropy.table import Table
@@ -106,6 +107,14 @@ def shimwell_catalog_df(catalog_filepath, shimwell_catalog):
     assert catalog is not None
     assert catalog.shape == shimwell_catalog.to_pandas().shape
     return catalog
+
+
+@pytest.fixture(scope="module")
+def missing_filter_df(test_data_dir):
+    missing_filter_path = test_data_dir / "objects_with_missing_gri_filters.parquet"
+    missing_filter_catalog = pd.read_parquet(missing_filter_path)
+    assert missing_filter_catalog is not None
+    return missing_filter_catalog
 
 
 @pytest.fixture(scope="module")
