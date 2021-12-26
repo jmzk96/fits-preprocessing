@@ -78,5 +78,4 @@ def test_panstarrs_loader(tmp_path, catalog_filepath):
         reduced_shimwell, example_source_name, tmp_path, download=True
     )
     assert primary_hdus is not None
-    log.info(f"list of hdus : {primary_hdus}")
-    # assert len(primary_hdus) == 3
+    assert len(primary_hdus) == 3

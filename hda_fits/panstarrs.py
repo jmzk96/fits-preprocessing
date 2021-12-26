@@ -272,12 +272,7 @@ def load_panstarrs_file(
         if not os.path.exists(filepath) and download:
             catalog_download = catalog[catalog.Source_Name == source_name]
             get_images_panstarrs(catalog_download, path)
-            try:
-                primary_hdu = fits.open(filepath)[0]
-                primary_hdus.append(primary_hdu)
-            except FileNotFoundError as e:
-                log.debug(e)
-                return None
+
         try:
             log.debug(f"Loading {filepath}")
             primary_hdu = fits.open(filepath)[0]
