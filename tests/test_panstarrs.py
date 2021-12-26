@@ -34,12 +34,24 @@ def test_panstarrs_image_loader(tmp_path, catalog_filepath):
     reduced_shimwell = hfits.read_shimwell_catalog(catalog_filepath)
     ps.get_images_panstarrs(reduced_shimwell.iloc[:3], tmp_path)
     assert (
-        len([name for name in os.listdir(tmp_path) if os.path.isfile(tmp_path, name)])
+        len(
+            [
+                name
+                for name in os.listdir(tmp_path)
+                if os.path.isfile(os.path.join(tmp_path, name))
+            ]
+        )
         == 9
     )
     ps.get_images_panstarrs(reduced_shimwell.iloc[:4], tmp_path)
     assert (
-        len([name for name in os.listdir(tmp_path) if os.path.isfile(tmp_path, name)])
+        len(
+            [
+                name
+                for name in os.listdir(tmp_path)
+                if os.path.isfile(os.path.join(tmp_path, name))
+            ]
+        )
         == 12
     )
     for f in os.listdir(tmp_path):
