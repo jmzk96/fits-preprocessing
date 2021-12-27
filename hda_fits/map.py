@@ -108,3 +108,14 @@ def create_selection_index(
         image_index.append(node not in nodes_selection_list)
 
     return image_index
+
+
+def average_quantisation_error(filepath: str) -> float:
+    header = read_map_file_header(filepath=filepath)
+    list_of_mins = list()
+    for i in range(header.number_of_images):
+        list_of_mins.append(
+            np.min(read_map_file_mapping(filepath=filepath, image_number=i))
+        )
+    aqe = sum(list_of_mins) / header.number_of_images
+    return aqe
