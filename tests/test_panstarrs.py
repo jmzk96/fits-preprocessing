@@ -11,6 +11,7 @@ log.setLevel(logging.INFO)
 def test_length_get_images_panstarrs(tmp_path, catalog_filepath, missing_filter_df):
     # test length of reduced shimwell catalog
     reduced_shimwell = hfits.read_shimwell_catalog(catalog_filepath)
+    reduced_shimwell = reduced_shimwell[reduced_shimwell.S_Code.str.contains("C|M")]
     assert (
         len(ps.get_images_panstarrs(reduced_shimwell, tmp_path, return_table_only=True))
         == 2877
