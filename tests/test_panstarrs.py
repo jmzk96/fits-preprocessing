@@ -1,5 +1,7 @@
 import os
 
+from astropy.io.fits.hdu.image import PrimaryHDU
+
 from hda_fits import fits as hfits
 from hda_fits import panstarrs as ps
 from hda_fits.logging_config import logging
@@ -80,3 +82,5 @@ def test_panstarrs_loader(tmp_path, catalog_filepath):
     )
     assert primary_hdus is not None
     assert len(primary_hdus) == 3
+    for hdu in primary_hdus:
+        assert isinstance(hdu, PrimaryHDU)
