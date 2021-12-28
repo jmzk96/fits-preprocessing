@@ -133,5 +133,5 @@ def topological_error(filepath: str) -> float:
         cutout = Cutout2D(array, first_min_index, (3, 3)).data
         if second_min in cutout:
             coherence_count += 1
-    te = coherence_count / header.number_of_images * 100
+    te = 1.0 - (coherence_count / header.number_of_images)
     return te

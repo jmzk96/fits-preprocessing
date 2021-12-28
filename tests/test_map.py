@@ -51,3 +51,15 @@ def test_create_selection_index():
 
     assert len(image_index) == 5
     assert sum(image_index) == 3
+
+
+def test_average_quantisation_error(test_map_file):
+    aqe = map.average_quantisation_error(test_map_file)
+    assert isinstance(aqe, float)
+    assert round(aqe, 5) == 2.54203
+
+
+def test_topological_error(test_map_file):
+    te = map.topological_error(test_map_file)
+    assert isinstance(te, float)
+    assert te == 0.0
