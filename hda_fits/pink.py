@@ -11,6 +11,7 @@ import pandas as pd
 from astropy.io.fits.hdu.image import PrimaryHDU
 
 import hda_fits.fits as hfits
+import hda_fits.panstarrs as ps
 from hda_fits.fits import RectangleSize, WCSCoordinates, load_mosaic
 from hda_fits.logging_config import logging
 from hda_fits.sdss import (
@@ -471,6 +472,64 @@ def write_crossmatch_catalog_to_pink_file(
     )
 
     return crossmatch_catalog[images_written]
+
+
+def write_panstarrs_objects_to_pink_file(
+    panstarrs_catalog: pd.DataFrame,
+    filepath: str,
+    panstarrs_data_path: str,
+    image_size: Union[int, RectangleSize],
+    download: bool = False,
+):
+    if isinstance(image_size, int):
+        image_size = RectangleSize(image_height=image_size, image_width=image_size)
+
+    image_height, image_width = image_size
+    number_of_images = len(panstarrs_catalog)
+
+    write_pink_file_header(
+        filepath,
+        number_of_images=number_of_images,
+        image_height=image_height,
+        image_width=image_width,
+    )
+    images_written = np.full(len(panstarrs_catalog), True)
+
+    assert images_written.size == panstarrs_catalog.shape[0]
+
+    list_of_source = panstarrs_catalog.Source_Name.tolist()
+    list_of_ra = panstarrs_catalog.RA.tolist()
+    list_of_dec = panstarrs_catalog.DEC.tolist()
+
+    for i, (source, ra, dec) in enumerate(zip(list_of_source, list_of_ra, list_of_dec)):
+        try:
+            primary_hdus = ps.load_panstarrs_file(
+                panstarrs_catalog, source, panstarrs_data_path, download
+            )
+
+            rgb_image = create_reprojected_rgb_image(
+                primary_hdus=primary_hdus,
+                coordinates=WCSCoordinates(ra, dec),
+                image_size=image_size,
+                merge=True,
+                use_lupton_algorithm=False,
+            )
+            if np.isnan(rgb_image).any():
+                images_written[i] = False
+                continue
+            write_pink_file_v2_data(filepath=filepath, data=rgb_image.flatten())
+        except Exception as e:
+            log.debug(e)
+            images_written[i] = False
+
+    write_pink_file_header(
+        filepath,
+        number_of_images=images_written.sum(),
+        image_height=image_height,
+        image_width=image_width,
+        overwrite=True,
+    )
+    return panstarrs_catalog[images_written]
 
 
 def write_multichannel_pink_file(

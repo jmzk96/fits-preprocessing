@@ -4,7 +4,7 @@ before_script:
   - python --version
   - python -m pip install --upgrade pip
   - pip install -r requirements_dev.txt
-  - pip install flake8 black pylint pytest isort
+  - pip install flake8 black pylint pytest isort pyarrow fastparquet
   - python setup.py install
 stages:
   - Static Analysis

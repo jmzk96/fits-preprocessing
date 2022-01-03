@@ -2,6 +2,7 @@ import os
 import struct
 
 import hda_fits as hfits
+import hda_fits.panstarrs as ps
 from hda_fits import fits, pink
 from hda_fits.logging_config import logging
 from hda_fits.types import Layout, PinkHeader
@@ -304,3 +305,39 @@ def test_read_pink_file_image_invalid_index(test_pink_file):
         assert e is not None
 
     assert image is None
+
+
+def test_write_read_panstarrs_objects_to_pink_file(tmp_path, catalog_filepath):
+    panstarrs_catalog = hfits.read_shimwell_catalog(catalog_filepath)
+    panstarrs_catalog = panstarrs_catalog[panstarrs_catalog.S_Code.str.contains("C|M")]
+    filepath = tmp_path / "test_panstarrs.pink"
+    # test function when download is False and fits files already in temp folder
+    ps.get_images_panstarrs(catalog=panstarrs_catalog[:3], file_directory=tmp_path)
+    pink.write_panstarrs_objects_to_pink_file(
+        panstarrs_catalog=panstarrs_catalog[:3],
+        filepath=filepath,
+        panstarrs_data_path=tmp_path,
+        image_size=95,
+    )
+    header = pink.read_pink_file_header(filepath)
+    example_data = pink.read_pink_file_image(filepath, 0)
+    assert header.version == 2
+    assert header.number_of_images == 2
+    assert header.layout == Layout(95, 95, 1)
+    assert example_data.shape == (95, 95)
+    # test function when download is True and fits files dont exist
+    for f in os.listdir(tmp_path):
+        os.remove(os.path.join(tmp_path, f))
+    pink.write_panstarrs_objects_to_pink_file(
+        panstarrs_catalog=panstarrs_catalog[:3],
+        filepath=filepath,
+        panstarrs_data_path=tmp_path,
+        image_size=95,
+        download=True,
+    )
+    header = pink.read_pink_file_header(filepath)
+    example_data = pink.read_pink_file_image(filepath, 0)
+    assert header.version == 2
+    assert header.number_of_images == 2
+    assert header.layout == Layout(95, 95, 1)
+    assert example_data.shape == (95, 95)
