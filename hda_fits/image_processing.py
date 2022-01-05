@@ -1,6 +1,8 @@
 from typing import Callable, Tuple, Union
 
 import numpy as np
+from scipy.spatial import ConvexHull
+from skimage.draw import polygon
 
 from hda_fits import pink as hpink
 
@@ -113,3 +115,63 @@ def calculate_snrs_on_pink_file(filepath_pink: str, channel: int = 0) -> np.ndar
         snrs[i] = calculate_signal_to_noise_ratio(image)
 
     return snrs
+
+
+def calculate_convex_hull_coordinates(
+    image_radio,
+    border_proportion=0.1,
+    factor_std_convex_hull=5,
+    factor_std_border=5,
+    padding=5,
+    fill_with=0.0,
+):
+    image_radio_masked = create_masked_optical_image(
+        image_radio,
+        image_radio,
+        factor_std=factor_std_border,
+        padding=padding,
+        border_proportion=border_proportion,
+        fill_with=fill_with,
+    )
+
+    points_xy = np.argwhere(
+        image_radio_masked
+        > (
+            image_radio_masked.mean()
+            + factor_std_convex_hull * image_radio_masked.std()
+        )
+    )
+    hull = ConvexHull(points_xy)
+
+    hull_vertices = points_xy[hull.vertices]
+    rr, cc = polygon(hull_vertices[:, 0], hull_vertices[:, 1], image_radio.shape)
+
+    return rr, cc
+
+
+def create_masked_image_convex_hull(
+    image_radio,
+    image_optical,
+    border_proportion=0.1,
+    factor_std_convex_hull=5,
+    factor_std_border=5,
+    padding=5,
+    fill_with=0.0,
+):
+    rr, cc = calculate_convex_hull_coordinates(
+        image_radio,
+        border_proportion=border_proportion,
+        factor_std_convex_hull=factor_std_convex_hull,
+        factor_std_border=factor_std_border,
+        padding=padding,
+        fill_with=fill_with,
+    )
+
+    if isinstance(fill_with, float):
+        image_masked = np.ones(image_radio.shape) * fill_with
+    else:
+        image_masked = np.ones(image_radio.shape) * fill_with(image_optical)
+
+    image_masked[rr, cc] = image_optical[rr, cc]
+
+    return image_masked
