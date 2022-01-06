@@ -247,6 +247,7 @@ def write_mosaic_objects_to_pink_file_v2(
     coordinates: List[WCSCoordinates],
     image_size: Union[int, RectangleSize],
     min_max_scale: bool = False,
+    denoise: bool = True,
     fill_nan=False,
     overwrite_header=False,
 ) -> List[bool]:
@@ -276,7 +277,10 @@ def write_mosaic_objects_to_pink_file_v2(
                     data = np.nan_to_num(data, data.mean())
                 else:
                     raise ValueError("Objects data array contains NaNs")
-            data = hfits.denoise_cutouts_from_mean(data)
+
+            if denoise:
+                data = hfits.denoise_cutouts_from_mean(data)
+
         except ValueError as e:
             log.warning(e)
             log.warning(f"Image at coordinates {coord} not added to pink file_stream")
@@ -363,6 +367,7 @@ def write_catalog_objects_pink_file_v2(
     mosaic_path: str,
     image_size: Union[int, RectangleSize],
     min_max_scale: bool = False,
+    denoise: bool = True,
     download: bool = False,
     fill_nan: bool = False,
 ) -> pd.DataFrame:
@@ -404,6 +409,7 @@ def write_catalog_objects_pink_file_v2(
             coordinates=coordinates,
             image_size=image_size,
             min_max_scale=min_max_scale,
+            denoise=denoise,
             fill_nan=fill_nan,
             overwrite_header=True,
         )
