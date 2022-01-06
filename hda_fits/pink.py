@@ -609,7 +609,7 @@ def write_multichannel_pink_file(
 
         try:
             transform_result = transformation_function(image_radio, image_optical)
-        except Exception as e:
+        except (ValueError, Exception) as e:
             log.warning(e)
             images_written[i] = False
             continue
