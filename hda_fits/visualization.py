@@ -100,7 +100,11 @@ def show_count_heatmap(
 
 
 def show_multichannel_image(
-    filepath: str, image_number: int, figsize=(24, 8), vmax_radio=1.0, vmax_optical=1.0
+    filepath: str,
+    image_number: int,
+    figsize=(24, 8),
+    vmax_radio=None,
+    vmax_optical=None,
 ) -> Tuple[Figure, Axes]:
     # header = hpink.read_pink_file_header(filepath)
     image = hpink.read_pink_file_image(filepath, image_number=image_number)
