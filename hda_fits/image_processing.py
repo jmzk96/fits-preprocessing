@@ -109,22 +109,22 @@ def calculate_bounding_box(
     return BoxCoordinates(top=top, right=right, bottom=bottom, left=left)
 
 
-def create_masked_optical_image(
-    image_optical,
-    image_radio,
+def create_and_apply_image_mask(
+    image_for_mask_creation,
+    image_to_be_masked,
     factor_std,
     padding,
     border_proportion=0.05,
     fill_with: Union[float, Callable] = np.mean,
 ) -> np.ndarray:
     border_coordinates = calculate_bounding_box(
-        image_radio,
+        image_to_be_masked,
         factor_std=factor_std,
         padding=padding,
         border_proportion=border_proportion,
     )
     image_optical_masked = create_masked_image(
-        image_optical, border_coordinates, fill_with=fill_with
+        image_for_mask_creation, border_coordinates, fill_with=fill_with
     )
     return image_optical_masked
 
@@ -145,16 +145,16 @@ def calculate_snrs_on_pink_file(filepath_pink: str, channel: int = 0) -> np.ndar
 
 
 def calculate_convex_hull_coordinates(
-    image_radio,
+    image,
     border_proportion=0.1,
     factor_std_convex_hull=5,
     factor_std_border=5,
     padding=5,
     fill_with=0.0,
 ):
-    image_radio_masked = create_masked_optical_image(
-        image_radio,
-        image_radio,
+    image_radio_masked = create_and_apply_image_mask(
+        image,
+        image,
         factor_std=factor_std_border,
         padding=padding,
         border_proportion=border_proportion,
@@ -171,14 +171,14 @@ def calculate_convex_hull_coordinates(
     hull = ConvexHull(points_xy)
 
     hull_vertices = points_xy[hull.vertices]
-    rr, cc = polygon(hull_vertices[:, 0], hull_vertices[:, 1], image_radio.shape)
+    rr, cc = polygon(hull_vertices[:, 0], hull_vertices[:, 1], image.shape)
 
     return rr, cc
 
 
 def create_masked_image_convex_hull(
-    image_radio,
-    image_optical,
+    image_for_mask_creation,
+    image_to_be_masked,
     border_proportion=0.1,
     factor_std_convex_hull=5,
     factor_std_border=5,
@@ -186,7 +186,7 @@ def create_masked_image_convex_hull(
     fill_with=0.0,
 ):
     rr, cc = calculate_convex_hull_coordinates(
-        image_radio,
+        image_for_mask_creation,
         border_proportion=border_proportion,
         factor_std_convex_hull=factor_std_convex_hull,
         factor_std_border=factor_std_border,
@@ -195,10 +195,12 @@ def create_masked_image_convex_hull(
     )
 
     if isinstance(fill_with, float):
-        image_masked = np.ones(image_radio.shape) * fill_with
+        image_masked = np.ones(image_for_mask_creation.shape) * fill_with
     else:
-        image_masked = np.ones(image_radio.shape) * fill_with(image_optical)
+        image_masked = np.ones(image_for_mask_creation.shape) * fill_with(
+            image_to_be_masked
+        )
 
-    image_masked[rr, cc] = image_optical[rr, cc]
+    image_masked[rr, cc] = image_to_be_masked[rr, cc]
 
     return image_masked

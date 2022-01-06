@@ -550,9 +550,9 @@ def transform_multichannel_images(
     channel_weights: List[float] = [1.0, 1.0],
 ) -> Union[Tuple[np.ndarray, np.ndarray], None]:
     # Transformations
-    image_optical_masked = himg.create_masked_optical_image(
-        image_optical=image_optical,
-        image_radio=image_radio,
+    image_optical_masked = himg.create_and_apply_image_mask(
+        image_for_mask_creation=image_optical,
+        image_to_be_masked=image_radio,
         factor_std=5,
         padding=5,
         border_proportion=0.15,
