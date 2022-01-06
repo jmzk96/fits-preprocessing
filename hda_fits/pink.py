@@ -564,13 +564,13 @@ def transform_multichannel_images(
 
     if not np.isfinite(image_data_optical).all():
         log.warning("INF or NaN in optical image. Skipping..")
-        return None
+        raise ValueError("NAN or INF")
 
     image_data_radio = image_radio.flatten()
 
     if not np.isfinite(image_data_radio).all():
         log.warning("INF or NaN in radio image. Skipping..")
-        return None
+        raise ValueError("NAN or INF")
 
     image_data_radio /= image_data_radio.sum() * channel_weights[0]
     image_data_optical /= image_data_optical.sum() * channel_weights[1]

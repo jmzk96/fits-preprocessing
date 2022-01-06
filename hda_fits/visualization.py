@@ -100,7 +100,7 @@ def show_count_heatmap(
 
 
 def show_multichannel_image(
-    filepath: str, image_number: int, figsize=(24, 8), vmax=1.0
+    filepath: str, image_number: int, figsize=(24, 8), vmax_radio=1.0, vmax_optical=1.0
 ) -> Tuple[Figure, Axes]:
     # header = hpink.read_pink_file_header(filepath)
     image = hpink.read_pink_file_image(filepath, image_number=image_number)
@@ -108,9 +108,9 @@ def show_multichannel_image(
     # number_of_channels = header.layout.depth
     fig, axes = plt.subplots(nrows=1, ncols=3, figsize=figsize)
 
-    axes[0].imshow(image[0, :, :], vmin=0.0, vmax=1.0, cmap="jet")
-    axes[1].imshow(image[1, :, :], vmin=0.0, vmax=vmax, cmap="jet")
-    axes[2].imshow(image[1, :, :], vmin=0.0, vmax=vmax, cmap="jet")
+    axes[0].imshow(image[0, :, :], vmin=0.0, vmax=vmax_radio, cmap="jet")
+    axes[1].imshow(image[1, :, :], vmin=0.0, vmax=vmax_optical, cmap="jet")
+    axes[2].imshow(image[1, :, :], vmin=0.0, vmax=vmax_optical, cmap="jet")
     axes[2].contour(image[0, :, :], cmap="jet")
 
     return fig, axes
