@@ -191,30 +191,3 @@ def create_cutout2D_as_updated_hdu(
     hdu_cutout.data = cutout.data
     hdu_cutout.header.update(cutout.wcs.to_header())
     return hdu_cutout
-
-
-def denoise_cutouts_from_above(cutout_flatarray, sigma=1.5):
-    std = np.std(cutout_flatarray)
-    max = np.amax(cutout_flatarray)
-    threshold = max - sigma * std
-    cutout_flatarray[cutout_flatarray < threshold] = 0.0
-    return cutout_flatarray
-
-
-def denoise_cutouts_from_mean(cutout_flatarray, sigma=1.5):
-    std = np.std(cutout_flatarray)
-    mean = np.mean(cutout_flatarray)
-    othreshold = mean + sigma * std
-    output_array = cutout_flatarray.copy()
-    output_array[output_array < othreshold] = 0.0
-    return output_array
-
-
-def min_max(data: np.ndarray):
-    dmax, dmin = data.max(), data.min()
-    return (data - dmin) / (dmax - dmin)
-
-
-def log_scale(data: np.ndarray, eps: float = 0.001):
-    min_scaled_array = data - data.min() + eps
-    return np.log(min_scaled_array)

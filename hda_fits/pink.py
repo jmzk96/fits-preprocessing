@@ -13,12 +13,7 @@ from astropy.io.fits.hdu.image import PrimaryHDU
 import hda_fits.fits as hfits
 from hda_fits import image_processing as himg
 from hda_fits import panstarrs as ps
-from hda_fits.fits import (
-    RectangleSize,
-    WCSCoordinates,
-    denoise_cutouts_from_mean,
-    load_mosaic,
-)
+from hda_fits.fits import RectangleSize, WCSCoordinates, load_mosaic
 from hda_fits.logging_config import logging
 from hda_fits.sdss import (
     create_reprojected_rgb_image,
@@ -279,7 +274,7 @@ def write_mosaic_objects_to_pink_file_v2(
                     raise ValueError("Objects data array contains NaNs")
 
             if denoise:
-                data = hfits.denoise_cutouts_from_mean(data)
+                data = himg.denoise_cutouts_from_mean(data)
 
         except ValueError as e:
             log.warning(e)
@@ -564,8 +559,8 @@ def transform_multichannel_images(
         fill_with=np.mean,
     )
 
-    image_data_optical = denoise_cutouts_from_mean(image_optical_masked.flatten())
-    image_data_optical = hfits.min_max(image_data_optical)
+    image_data_optical = himg.denoise_cutouts_from_mean(image_optical_masked.flatten())
+    image_data_optical = himg.min_max(image_data_optical)
 
     if not np.isfinite(image_data_optical).all():
         log.warning("INF or NaN in optical image. Skipping..")
