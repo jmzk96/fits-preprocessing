@@ -607,9 +607,10 @@ def write_multichannel_pink_file(
         image_radio = read_pink_file_image(filepath_pink_radio, i)
         image_optical = read_pink_file_image(filepath_pink_optical, i)
 
-        transform_result = transformation_function(image_radio, image_optical)
-
-        if not transform_result:
+        try:
+            transform_result = transformation_function(image_radio, image_optical)
+        except Exception as e:
+            log.warning(e)
             images_written[i] = False
             continue
 
