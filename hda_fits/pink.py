@@ -631,3 +631,22 @@ def write_multichannel_pink_file(
     )
 
     return images_written
+
+
+def write_pink_subset_file(
+    filepath_output_pink: str, filepath_input_pink: str, image_indices: List[int]
+):
+    header = read_pink_file_header(filepath_input_pink)
+    width, height, _ = header.layout
+
+    write_pink_file_header(
+        filepath=filepath_output_pink,
+        number_of_images=len(image_indices),
+        image_height=height,
+        image_width=width,
+        overwrite=False,
+    )
+
+    for idx in image_indices:
+        image = read_pink_file_image(filepath_input_pink, idx)
+        write_pink_file_v2_data(filepath_output_pink, image.flatten())
