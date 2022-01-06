@@ -4,7 +4,7 @@ This module provides I/O functionality related to the PINK self
 organizing maps application.
 """
 import struct
-from typing import BinaryIO, List, Union
+from typing import BinaryIO, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -543,11 +543,45 @@ def write_panstarrs_objects_to_pink_file(
     return panstarrs_catalog[images_written]
 
 
+def transform_multichannel_images(
+    image_radio: np.ndarray,
+    image_optical: np.ndarray,
+    channel_weights: List[float] = [1.0, 1.0],
+) -> Union[Tuple[np.ndarray, np.ndarray], None]:
+    # Transformations
+    image_optical_masked = himg.create_masked_optical_image(
+        image_optical=image_optical,
+        image_radio=image_radio,
+        factor_std=5,
+        padding=5,
+        border_proportion=0.15,
+        fill_with=np.mean,
+    )
+
+    image_data_optical = denoise_cutouts_from_mean(image_optical_masked.flatten())
+    image_data_optical = hfits.min_max(image_data_optical)
+
+    if not np.isfinite(image_data_optical).all():
+        log.warning("INF or NaN in optical image. Skipping..")
+        return None
+
+    image_data_radio = image_radio.flatten()
+
+    if not np.isfinite(image_data_radio).all():
+        log.warning("INF or NaN in radio image. Skipping..")
+        return None
+
+    image_data_radio /= image_data_radio.sum() * channel_weights[0]
+    image_data_optical /= image_data_optical.sum() * channel_weights[1]
+
+    return image_data_radio, image_data_optical
+
+
 def write_multichannel_pink_file(
     filepath_pink_output: str,
     filepath_pink_radio: str,
     filepath_pink_optical: str,
-    channel_weights: List[float] = [1.0, 1.0],
+    transformation_function=transform_multichannel_images,
 ) -> np.ndarray:
     header_radio = read_pink_file_header(filepath_pink_radio)
     header_optical = read_pink_file_header(filepath_pink_optical)
@@ -572,33 +606,13 @@ def write_multichannel_pink_file(
         image_radio = read_pink_file_image(filepath_pink_radio, i)
         image_optical = read_pink_file_image(filepath_pink_optical, i)
 
-        # Transformations
-        image_optical_masked = himg.create_masked_optical_image(
-            image_optical=image_optical,
-            image_radio=image_radio,
-            factor_std=5,
-            padding=5,
-            border_proportion=0.15,
-            fill_with=np.mean,
-        )
+        transform_result = transformation_function(image_radio, image_optical)
 
-        image_data_optical = denoise_cutouts_from_mean(image_optical_masked.flatten())
-        image_data_optical = hfits.min_max(image_data_optical)
-
-        if not np.isfinite(image_data_optical).all():
-            log.warning("INF or NaN in optical image. Skipping..")
+        if not transform_result:
             images_written[i] = False
             continue
 
-        image_data_radio = image_radio.flatten()
-
-        if not np.isfinite(image_data_radio).all():
-            log.warning("INF or NaN in radio image. Skipping..")
-            images_written[i] = False
-            continue
-
-        image_data_radio /= image_data_radio.sum() * channel_weights[0]
-        image_data_optical /= image_data_optical.sum() * channel_weights[1]
+        image_data_radio, image_data_optical = transform_result
 
         data = np.concatenate([image_data_radio, image_data_optical])
         write_pink_file_v2_data(filepath=filepath_pink_output, data=data)
