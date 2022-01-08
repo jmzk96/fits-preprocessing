@@ -562,18 +562,18 @@ def transform_multichannel_images(
     image_data_optical = himg.denoise_cutouts_from_mean(image_optical_masked.flatten())
     image_data_optical = himg.min_max(image_data_optical)
 
+    image_data_radio = image_radio.flatten()
+
+    image_data_radio /= image_data_radio.sum() * channel_weights[0]
+    image_data_optical /= image_data_optical.sum() * channel_weights[1]
+
     if not np.isfinite(image_data_optical).all():
         log.warning("INF or NaN in optical image. Skipping..")
         raise ValueError("NAN or INF")
 
-    image_data_radio = image_radio.flatten()
-
     if not np.isfinite(image_data_radio).all():
         log.warning("INF or NaN in radio image. Skipping..")
         raise ValueError("NAN or INF")
-
-    image_data_radio /= image_data_radio.sum() * channel_weights[0]
-    image_data_optical /= image_data_optical.sum() * channel_weights[1]
 
     return image_data_radio, image_data_optical
 
