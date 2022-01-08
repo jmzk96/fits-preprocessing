@@ -583,7 +583,6 @@ def write_multichannel_pink_file(
     filepath_pink_radio: str,
     filepath_pink_optical: str,
     transformation_function=transform_multichannel_images,
-    catalog: pd.DataFrame = None,
 ) -> np.ndarray:
     header_radio = read_pink_file_header(filepath_pink_radio)
     header_optical = read_pink_file_header(filepath_pink_optical)
@@ -609,12 +608,63 @@ def write_multichannel_pink_file(
         image_optical = read_pink_file_image(filepath_pink_optical, i)
 
         try:
-            if catalog:
-                transform_result = transformation_function(
-                    image_radio, image_optical, catalog, i
-                )
-            else:
-                transform_result = transformation_function(image_radio, image_optical)
+            transform_result = transformation_function(image_radio, image_optical)
+        except (ValueError, Exception) as e:
+            log.warning(e)
+            images_written[i] = False
+            continue
+
+        image_data_radio, image_data_optical = transform_result
+
+        data = np.concatenate([image_data_radio, image_data_optical])
+        write_pink_file_v2_data(filepath=filepath_pink_output, data=data)
+
+    write_pink_file_header_multichannel(
+        filepath=filepath_pink_output,
+        number_of_images=images_written.sum(),
+        image_layout=layout,
+        overwrite=True,
+    )
+
+    return images_written
+
+
+def write_multichannel_pink_file_from_catalog(
+    filepath_pink_output: str,
+    filepath_pink_radio: str,
+    filepath_pink_optical: str,
+    catalog: pd.DataFrame,
+    transformation_function=transform_multichannel_images,
+) -> np.ndarray:
+    header_radio = read_pink_file_header(filepath_pink_radio)
+    header_optical = read_pink_file_header(filepath_pink_optical)
+
+    layout = Layout(
+        depth=2, height=header_radio.layout.height, width=header_radio.layout.width
+    )
+
+    assert header_radio == header_optical
+
+    # Header schreiben
+    write_pink_file_header_multichannel(
+        filepath=filepath_pink_output,
+        number_of_images=catalog.shape[0],
+        image_layout=layout,
+    )
+
+    images_written = np.full(header_radio.number_of_images, True)
+
+    image_indices = catalog.index.tolist()
+
+    # Daten lesen und Daten schreiben
+    for i, img_idx in enumerate(image_indices):
+        image_radio = read_pink_file_image(filepath_pink_radio, img_idx)
+        image_optical = read_pink_file_image(filepath_pink_optical, img_idx)
+
+        try:
+            transform_result = transformation_function(
+                image_radio, image_optical, args=catalog.iloc[i].to_dict()
+            )
         except (ValueError, Exception) as e:
             log.warning(e)
             images_written[i] = False
