@@ -652,7 +652,7 @@ def write_multichannel_pink_file_from_catalog(
         image_layout=layout,
     )
 
-    images_written = np.full(header_radio.number_of_images, True)
+    images_written = np.full(catalog.shape[0], True)
 
     image_indices = catalog.index.tolist()
 
