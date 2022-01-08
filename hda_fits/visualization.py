@@ -84,6 +84,35 @@ def show_merged_som_node(
     return fig, ax
 
 
+def show_multichannel_som_node(
+    som: SOM,
+    row: int,
+    col: int,
+    figsize=(24, 8),
+    vmax_radio=None,
+    vmax_optical=None,
+) -> Tuple[Figure, Axes]:
+
+    node = som.get_node(row, col)
+    # number_of_channels = header.layout.depth
+    fig, axes = plt.subplots(nrows=1, ncols=3, figsize=figsize)
+
+    for ax in axes:
+        ax.axis("off")
+
+    axes[0].imshow(node[0, :, :], vmin=0.0, vmax=vmax_radio, cmap="jet")
+    axes[0].set_title("radio")
+    axes[1].imshow(node[1, :, :], vmin=0.0, vmax=vmax_optical, cmap="jet")
+    axes[1].set_title("optical")
+    axes[2].imshow(node[1, :, :], vmin=0.0, vmax=vmax_optical, cmap="jet")
+    axes[2].contour(node[0, :, :], cmap="jet")
+    axes[2].set_title("merged")
+
+    fig.tight_layout()
+
+    return fig, axes
+
+
 def show_count_heatmap(
     filepath_map: str, figsize: Tuple[int, int]
 ) -> Tuple[Figure, Axes]:
@@ -116,6 +145,30 @@ def show_multichannel_image(
     axes[1].imshow(image[1, :, :], vmin=0.0, vmax=vmax_optical, cmap="jet")
     axes[2].imshow(image[1, :, :], vmin=0.0, vmax=vmax_optical, cmap="jet")
     axes[2].contour(image[0, :, :], cmap="jet")
+
+    return fig, axes
+
+
+def show_multichannel_images(filepath, image_indices, fig_width=12):
+    n_images = len(image_indices)
+
+    fig, axes = plt.subplots(
+        ncols=2, nrows=n_images, figsize=(fig_width, n_images * fig_width // 2)
+    )
+
+    for ax in axes:
+        for a in ax:
+            a.axis("off")
+
+    for i, img_idx in enumerate(image_indices):
+        img = hpink.read_pink_file_image(filepath=filepath, image_number=img_idx)
+
+        axes[i][0].imshow(img[0, :, :], cmap="jet")
+        axes[i][0].set_title(f"radio [{img_idx}]")
+        axes[i][1].imshow(img[1, :, :], cmap="jet")
+        axes[i][1].set_title(f"optical [{img_idx}]")
+
+    fig.tight_layout()
 
     return fig, axes
 
