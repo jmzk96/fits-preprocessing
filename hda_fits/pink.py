@@ -583,6 +583,7 @@ def write_multichannel_pink_file(
     filepath_pink_radio: str,
     filepath_pink_optical: str,
     transformation_function=transform_multichannel_images,
+    catalog: pd.DataFrame = None,
 ) -> np.ndarray:
     header_radio = read_pink_file_header(filepath_pink_radio)
     header_optical = read_pink_file_header(filepath_pink_optical)
@@ -608,7 +609,12 @@ def write_multichannel_pink_file(
         image_optical = read_pink_file_image(filepath_pink_optical, i)
 
         try:
-            transform_result = transformation_function(image_radio, image_optical)
+            if catalog:
+                transform_result = transformation_function(
+                    image_radio, image_optical, catalog, i
+                )
+            else:
+                transform_result = transformation_function(image_radio, image_optical)
         except (ValueError, Exception) as e:
             log.warning(e)
             images_written[i] = False
