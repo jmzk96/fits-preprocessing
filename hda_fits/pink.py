@@ -4,14 +4,15 @@ This module provides I/O functionality related to the PINK self
 organizing maps application.
 """
 import struct
-from typing import BinaryIO, List, Union
+from typing import BinaryIO, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
 from astropy.io.fits.hdu.image import PrimaryHDU
 
 import hda_fits.fits as hfits
-import hda_fits.panstarrs as ps
+from hda_fits import image_processing as himg
+from hda_fits import panstarrs as ps
 from hda_fits.fits import RectangleSize, WCSCoordinates, load_mosaic
 from hda_fits.logging_config import logging
 from hda_fits.sdss import (
@@ -241,6 +242,7 @@ def write_mosaic_objects_to_pink_file_v2(
     coordinates: List[WCSCoordinates],
     image_size: Union[int, RectangleSize],
     min_max_scale: bool = False,
+    denoise: bool = True,
     fill_nan=False,
     overwrite_header=False,
 ) -> List[bool]:
@@ -270,7 +272,10 @@ def write_mosaic_objects_to_pink_file_v2(
                     data = np.nan_to_num(data, data.mean())
                 else:
                     raise ValueError("Objects data array contains NaNs")
-            data = hfits.denoise_cutouts_from_mean(data)
+
+            if denoise:
+                data = himg.denoise_cutouts_from_mean(data)
+
         except ValueError as e:
             log.warning(e)
             log.warning(f"Image at coordinates {coord} not added to pink file_stream")
@@ -357,6 +362,7 @@ def write_catalog_objects_pink_file_v2(
     mosaic_path: str,
     image_size: Union[int, RectangleSize],
     min_max_scale: bool = False,
+    denoise: bool = True,
     download: bool = False,
     fill_nan: bool = False,
 ) -> pd.DataFrame:
@@ -398,6 +404,7 @@ def write_catalog_objects_pink_file_v2(
             coordinates=coordinates,
             image_size=image_size,
             min_max_scale=min_max_scale,
+            denoise=denoise,
             fill_nan=fill_nan,
             overwrite_header=True,
         )
@@ -427,6 +434,7 @@ def write_crossmatch_catalog_to_pink_file(
     sdss_data_path: str,
     image_size: Union[int, RectangleSize],
     download: bool = False,
+    fill_nan: bool = False,
 ):
 
     if isinstance(image_size, int):
@@ -457,9 +465,13 @@ def write_crossmatch_catalog_to_pink_file(
             merge=True,
             use_lupton_algorithm=False,
         )
+
         if np.isnan(rgb_image).any():
-            images_written[i] = False
-            continue
+            if fill_nan:
+                rgb_image = np.nan_to_num(rgb_image, rgb_image.mean())
+            else:
+                images_written[i] = False
+                continue
 
         write_pink_file_v2_data(filepath=filepath, data=rgb_image.flatten())
 
@@ -532,12 +544,46 @@ def write_panstarrs_objects_to_pink_file(
     return panstarrs_catalog[images_written]
 
 
+def transform_multichannel_images(
+    image_radio: np.ndarray,
+    image_optical: np.ndarray,
+    channel_weights: List[float] = [1.0, 1.0],
+) -> Union[Tuple[np.ndarray, np.ndarray], None]:
+    # Transformations
+    image_optical_masked = himg.create_and_apply_image_mask(
+        image_for_mask_creation=image_optical,
+        image_to_be_masked=image_radio,
+        factor_std=5,
+        padding=5,
+        border_proportion=0.15,
+        fill_with=np.mean,
+    )
+
+    image_data_optical = himg.denoise_cutouts_from_mean(image_optical_masked.flatten())
+    image_data_optical = himg.min_max(image_data_optical)
+
+    image_data_radio = image_radio.flatten()
+
+    image_data_radio /= image_data_radio.sum() * channel_weights[0]
+    image_data_optical /= image_data_optical.sum() * channel_weights[1]
+
+    if not np.isfinite(image_data_optical).all():
+        log.warning("INF or NaN in optical image. Skipping..")
+        raise ValueError("NAN or INF")
+
+    if not np.isfinite(image_data_radio).all():
+        log.warning("INF or NaN in radio image. Skipping..")
+        raise ValueError("NAN or INF")
+
+    return image_data_radio, image_data_optical
+
+
 def write_multichannel_pink_file(
     filepath_pink_output: str,
     filepath_pink_radio: str,
     filepath_pink_optical: str,
-    channel_weights: List[float],
-):
+    transformation_function=transform_multichannel_images,
+) -> np.ndarray:
     header_radio = read_pink_file_header(filepath_pink_radio)
     header_optical = read_pink_file_header(filepath_pink_optical)
 
@@ -554,13 +600,105 @@ def write_multichannel_pink_file(
         image_layout=layout,
     )
 
+    images_written = np.full(header_radio.number_of_images, True)
+
     # Daten lesen und Daten schreiben
     for i in range(header_radio.number_of_images):
-        image_data_radio = read_pink_file_image(filepath_pink_radio, i).flatten()
-        image_data_optical = read_pink_file_image(filepath_pink_optical, i).flatten()
+        image_radio = read_pink_file_image(filepath_pink_radio, i)
+        image_optical = read_pink_file_image(filepath_pink_optical, i)
 
-        image_data_radio /= image_data_radio.sum() * channel_weights[0]
-        image_data_optical /= image_data_optical.sum() * channel_weights[0]
+        try:
+            transform_result = transformation_function(image_radio, image_optical)
+        except (ValueError, Exception) as e:
+            log.warning(e)
+            images_written[i] = False
+            continue
+
+        image_data_radio, image_data_optical = transform_result
 
         data = np.concatenate([image_data_radio, image_data_optical])
         write_pink_file_v2_data(filepath=filepath_pink_output, data=data)
+
+    write_pink_file_header_multichannel(
+        filepath=filepath_pink_output,
+        number_of_images=images_written.sum(),
+        image_layout=layout,
+        overwrite=True,
+    )
+
+    return images_written
+
+
+def write_multichannel_pink_file_from_catalog(
+    filepath_pink_output: str,
+    filepath_pink_radio: str,
+    filepath_pink_optical: str,
+    catalog: pd.DataFrame,
+    transformation_function=transform_multichannel_images,
+) -> np.ndarray:
+    header_radio = read_pink_file_header(filepath_pink_radio)
+    header_optical = read_pink_file_header(filepath_pink_optical)
+
+    layout = Layout(
+        depth=2, height=header_radio.layout.height, width=header_radio.layout.width
+    )
+
+    assert header_radio == header_optical
+
+    # Header schreiben
+    write_pink_file_header_multichannel(
+        filepath=filepath_pink_output,
+        number_of_images=catalog.shape[0],
+        image_layout=layout,
+    )
+
+    images_written = np.full(catalog.shape[0], True)
+
+    image_indices = catalog.index.tolist()
+
+    # Daten lesen und Daten schreiben
+    for i, img_idx in enumerate(image_indices):
+        image_radio = read_pink_file_image(filepath_pink_radio, img_idx)
+        image_optical = read_pink_file_image(filepath_pink_optical, img_idx)
+
+        try:
+            transform_result = transformation_function(
+                image_radio, image_optical, args=catalog.iloc[i].to_dict()
+            )
+        except (ValueError, Exception) as e:
+            log.warning(e)
+            images_written[i] = False
+            continue
+
+        image_data_radio, image_data_optical = transform_result
+
+        data = np.concatenate([image_data_radio, image_data_optical])
+        write_pink_file_v2_data(filepath=filepath_pink_output, data=data)
+
+    write_pink_file_header_multichannel(
+        filepath=filepath_pink_output,
+        number_of_images=images_written.sum(),
+        image_layout=layout,
+        overwrite=True,
+    )
+
+    return images_written
+
+
+def write_pink_subset_file(
+    filepath_output_pink: str, filepath_input_pink: str, image_indices: List[int]
+):
+    header = read_pink_file_header(filepath_input_pink)
+    width, height, _ = header.layout
+
+    write_pink_file_header(
+        filepath=filepath_output_pink,
+        number_of_images=len(image_indices),
+        image_height=height,
+        image_width=width,
+        overwrite=False,
+    )
+
+    for idx in image_indices:
+        image = read_pink_file_image(filepath_input_pink, idx)
+        write_pink_file_v2_data(filepath_output_pink, image.flatten())

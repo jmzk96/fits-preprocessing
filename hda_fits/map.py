@@ -108,3 +108,12 @@ def create_selection_index(
         image_index.append(node not in nodes_selection_list)
 
     return image_index
+
+
+def find_image_indices_mapped_to_node(
+    node_per_image: List[int], row: int, col: int, layout: Layout = Layout(10, 10, 1)
+):
+    w, h, d = layout
+    idx = w * row + col
+    image_indices = np.argwhere(np.array(node_per_image) == idx).flatten()
+    return image_indices
