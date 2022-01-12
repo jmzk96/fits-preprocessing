@@ -215,6 +215,23 @@ def calculate_maximum_distance(
     return np.sqrt(np.max(dist))
 
 
+def create_circular_masked_image(
+    image: np.ndarray, radius: float, fill_with: Union[float, Callable] = 0.0
+) -> np.ndarray:
+    image_masked = np.ones(image.shape)
+    center = [dim / 2 for dim in image.shape]
+    disk_coordinates = disk(center=center, radius=radius)
+
+    if isinstance(fill_with, float):
+        image_masked = np.ones(image.shape) * fill_with
+    else:
+        image_masked = np.ones(image.shape) * fill_with(image)
+
+    image_masked[disk_coordinates] = image[disk_coordinates]
+
+    return image_masked
+
+
 def create_circular_masked_image_from_convex_hull(
     image_for_mask_creation: np.ndarray,
     image_to_be_masked: np.ndarray,
@@ -239,13 +256,9 @@ def create_circular_masked_image_from_convex_hull(
     radius = calculate_maximum_distance(
         convex_hull_coordinates=convex_hull_coordinates, point=center
     )
-    disk_coordinates = disk(center=center, radius=radius)
 
-    if isinstance(fill_with, float):
-        image_masked = np.ones(image_to_be_masked.shape) * fill_with
-    else:
-        image_masked = np.ones(image_to_be_masked.shape) * fill_with(image_to_be_masked)
-
-    image_masked[disk_coordinates] = image_to_be_masked[disk_coordinates]
+    image_masked = create_circular_masked_image(
+        image_to_be_masked, radius=radius, fill_with=fill_with
+    )
 
     return image_masked
