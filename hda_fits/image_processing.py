@@ -1,8 +1,8 @@
-from typing import Callable, Tuple, Union
+from typing import Callable, List, Tuple, Union
 
 import numpy as np
 from scipy.spatial import ConvexHull
-from skimage.draw import polygon
+from skimage.draw import disk, polygon
 
 from hda_fits import pink as hpink
 
@@ -110,11 +110,11 @@ def calculate_bounding_box(
 
 
 def create_and_apply_image_mask(
-    image_for_mask_creation,
-    image_to_be_masked,
-    factor_std,
-    padding,
-    border_proportion=0.05,
+    image_for_mask_creation: np.ndarray,
+    image_to_be_masked: np.ndarray,
+    factor_std: float,
+    padding: int,
+    border_proportion: float = 0.05,
     fill_with: Union[float, Callable] = np.mean,
 ) -> np.ndarray:
     border_coordinates = calculate_bounding_box(
@@ -145,13 +145,13 @@ def calculate_snrs_on_pink_file(filepath_pink: str, channel: int = 0) -> np.ndar
 
 
 def calculate_convex_hull_coordinates(
-    image,
-    border_proportion=0.1,
-    factor_std_convex_hull=5,
-    factor_std_border=5,
-    padding=5,
-    fill_with=0.0,
-):
+    image: np.ndarray,
+    border_proportion: float = 0.1,
+    factor_std_convex_hull: float = 5,
+    factor_std_border: float = 5,
+    padding: int = 5,
+    fill_with: Union[float, Callable] = 0.0,
+) -> Tuple[np.ndarray, np.ndarray]:
     image_radio_masked = create_and_apply_image_mask(
         image,
         image,
@@ -177,14 +177,14 @@ def calculate_convex_hull_coordinates(
 
 
 def create_masked_image_convex_hull(
-    image_for_mask_creation,
-    image_to_be_masked,
-    border_proportion=0.1,
-    factor_std_convex_hull=5,
-    factor_std_border=5,
-    padding=5,
-    fill_with=0.0,
-):
+    image_for_mask_creation: np.ndarray,
+    image_to_be_masked: np.ndarray,
+    border_proportion: float = 0.1,
+    factor_std_convex_hull: float = 5,
+    factor_std_border: float = 5,
+    padding: int = 5,
+    fill_with: Union[float, Callable] = 0.0,
+) -> np.ndarray:
     rr, cc = calculate_convex_hull_coordinates(
         image_for_mask_creation,
         border_proportion=border_proportion,
@@ -202,5 +202,63 @@ def create_masked_image_convex_hull(
         )
 
     image_masked[rr, cc] = image_to_be_masked[rr, cc]
+
+    return image_masked
+
+
+def calculate_maximum_distance(
+    convex_hull_coordinates: Tuple[np.ndarray, np.ndarray],
+    point: Union[Tuple[float, float], List[float]],
+) -> float:
+    x, y = convex_hull_coordinates
+    dist = np.square(x - point[0]) + np.square(y - point[1])
+    return np.sqrt(np.max(dist))
+
+
+def create_circular_masked_image(
+    image: np.ndarray, radius: float, fill_with: Union[float, Callable] = 0.0
+) -> np.ndarray:
+    image_masked = np.ones(image.shape)
+    center = [dim / 2 for dim in image.shape]
+    disk_coordinates = disk(center=center, radius=radius)
+
+    if isinstance(fill_with, float):
+        image_masked = np.ones(image.shape) * fill_with
+    else:
+        image_masked = np.ones(image.shape) * fill_with(image)
+
+    image_masked[disk_coordinates] = image[disk_coordinates]
+
+    return image_masked
+
+
+def create_circular_masked_image_from_convex_hull(
+    image_for_mask_creation: np.ndarray,
+    image_to_be_masked: np.ndarray,
+    border_proportion: float = 0.1,
+    factor_std_convex_hull: float = 5,
+    factor_std_border: float = 5,
+    padding: int = 5,
+    fill_with: Union[float, Callable] = 0.0,
+) -> np.ndarray:
+    convex_hull_coordinates = calculate_convex_hull_coordinates(
+        image_for_mask_creation,
+        border_proportion=border_proportion,
+        factor_std_convex_hull=factor_std_convex_hull,
+        factor_std_border=factor_std_border,
+        padding=padding,
+        fill_with=fill_with,
+    )
+
+    assert image_for_mask_creation.shape == image_to_be_masked.shape
+
+    center = [dim / 2 for dim in image_to_be_masked.shape]
+    radius = calculate_maximum_distance(
+        convex_hull_coordinates=convex_hull_coordinates, point=center
+    )
+
+    image_masked = create_circular_masked_image(
+        image_to_be_masked, radius=radius, fill_with=fill_with
+    )
 
     return image_masked
