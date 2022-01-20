@@ -1,6 +1,7 @@
 from typing import Callable, List, Tuple, Union
 
 import numpy as np
+from scipy.ndimage.morphology import distance_transform_edt
 from scipy.spatial import ConvexHull
 from skimage.draw import disk, polygon
 
@@ -262,3 +263,28 @@ def create_circular_masked_image_from_convex_hull(
     )
 
     return image_masked
+
+
+def create_weight_factors_euclidean(image: np.ndarray):
+    row, col = image.shape
+    if row % 2 == 0:
+        center_row = row / 2
+    else:
+        center_row = (row - 1) / 2
+    if col % 2 == 0:
+        center_col = col / 2
+    else:
+        center_col = (col - 1) / 2
+    grid_row, grid_col = np.ogrid[:row, :col]
+    predist = np.maximum(np.abs(grid_row - center_row), np.abs(grid_col - center_col))
+
+    def distmat(a, index):
+        mask = np.ones(a.shape, dtype=bool)
+        mask[index[0], index[1]] = False
+        return distance_transform_edt(mask)
+
+    return 1 / (distmat(predist, index=[center_row, center_col]) + 1)
+
+
+def create_weight_factors_radius(image: np.ndarray):
+    pass
