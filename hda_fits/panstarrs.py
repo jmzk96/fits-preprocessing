@@ -171,7 +171,7 @@ def panstarrs_image_loader(
                                     not added to panSTARRS file stream"
                             )
                 except requests.exceptions.ConnectionError:
-                    r.status_code = "Connection refused"
+                    #                    r.status_code = "Connection refused"
                     log.warning(
                         f"Image at coordinates RA:{coordinates.RA} , DEC:{coordinates.DEC} with name:{source_name} at Band:{filter}\
                                     not added to panSTARRS file stream"
@@ -237,7 +237,7 @@ def panstarrs_image_loader(
                                 )
 
                     except requests.exceptions.ConnectionError:
-                        r.status_code = "Connection refused"
+                        #                        r.status_code = "Connection refused"
                         number_of_missing_images += 1
                         log.warning(
                             f"Image at coordinates RA:{coordinates.RA} , DEC:{coordinates.DEC} with name:{source_name} at Band:{filter}\

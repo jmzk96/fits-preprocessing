@@ -21,6 +21,13 @@ class Layout(NamedTuple):
     depth: int = 1
 
 
+class BoxCoordinates(NamedTuple):
+    top: int
+    right: int
+    bottom: int
+    left: int
+
+
 class PinkHeader(NamedTuple):
     version: Literal[1, 2]
     file_type: Literal[0]

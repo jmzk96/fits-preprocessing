@@ -15,6 +15,7 @@ class SOM:
     def __init__(self, header: SOMHeader, nodes: List[np.ndarray]):
         self.header = header
         self.layout = header.som_layout
+        self.channels = header.neuron_layout.depth
         self.nodes = nodes
 
     def get_node(self, row: int, column: int):

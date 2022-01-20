@@ -111,6 +111,7 @@ def create_selection_index(
     return image_index
 
 
+<<<<<<< HEAD
 def average_quantisation_error(filepath: str) -> float:
     header = read_map_file_header(filepath=filepath)
     list_of_mins = list()
@@ -135,3 +136,12 @@ def topological_error(filepath: str) -> float:
             coherence_count += 1
     te = 1.0 - (coherence_count / header.number_of_images)
     return te
+=======
+def find_image_indices_mapped_to_node(
+    node_per_image: List[int], row: int, col: int, layout: Layout = Layout(10, 10, 1)
+):
+    w, h, d = layout
+    idx = w * row + col
+    image_indices = np.argwhere(np.array(node_per_image) == idx).flatten()
+    return image_indices
+>>>>>>> master
