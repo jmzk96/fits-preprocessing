@@ -22,6 +22,3 @@ def test_max_weight_in_middle():
         6,
         6,
     )
-    weighted_image_gauss = himg.create_weight_factors_gauss(image, std=5.0)
-    gauss = weighted_image_gauss / image
-    assert np.unravel_index(np.argmax(gauss, axis=None), gauss.shape) == (6, 6)
