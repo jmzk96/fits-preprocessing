@@ -3,6 +3,7 @@ from math import prod
 from typing import BinaryIO, List, Tuple
 
 import numpy as np
+from astropy.nddata import Cutout2D
 
 from hda_fits.types import Layout, MapHeader
 
@@ -108,6 +109,32 @@ def create_selection_index(
         image_index.append(node not in nodes_selection_list)
 
     return image_index
+
+
+def average_quantisation_error(filepath: str) -> float:
+    header = read_map_file_header(filepath=filepath)
+    list_of_mins = list()
+    for i in range(header.number_of_images):
+        list_of_mins.append(
+            np.min(read_map_file_mapping(filepath=filepath, image_number=i))
+        )
+    aqe = sum(list_of_mins) / header.number_of_images
+    return aqe
+
+
+def topological_error(filepath: str) -> float:
+    header = read_map_file_header(filepath=filepath)
+    coherence_count = 0
+    for i in range(header.number_of_images):
+        array = read_map_file_mapping(filepath=filepath, image_number=i)
+        index = np.unravel_index(np.argsort(array, axis=None), array.shape)
+        first_min_index = index[0][0], index[1][0]
+        second_min = array[index][1]
+        cutout = Cutout2D(array, first_min_index, (3, 3)).data
+        if second_min in cutout:
+            coherence_count += 1
+    te = 1.0 - (coherence_count / header.number_of_images)
+    return te
 
 
 def find_image_indices_mapped_to_node(
