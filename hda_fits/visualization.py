@@ -47,6 +47,29 @@ def show_som(
     return fig, axes
 
 
+def show_som_node(
+    som: SOM,
+    row: int,
+    col: int,
+    figsize=(8, 8),
+    vmin=None,
+    vmax=None,
+) -> Tuple[Figure, Axes]:
+
+    node = som.get_node(row, col)
+    # number_of_channels = header.layout.depth
+    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=figsize)
+
+    ax.axis("off")
+
+    ax.imshow(node, vmin=vmin, vmax=vmax, cmap="jet")
+    ax.set_title("radio")
+
+    fig.tight_layout()
+
+    return fig, ax
+
+
 def show_merged_som(
     som: SOM, figsize: Tuple[int, int] = (12, 12), cmap: str = "jet"
 ) -> Tuple[Figure, Axes]:
