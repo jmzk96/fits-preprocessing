@@ -1,6 +1,8 @@
 from typing import Callable, List, Tuple, Union
 
 import numpy as np
+from scipy import signal
+from scipy.ndimage.morphology import distance_transform_edt
 from scipy.spatial import ConvexHull
 from skimage.draw import disk, polygon
 
@@ -262,3 +264,40 @@ def create_circular_masked_image_from_convex_hull(
     )
 
     return image_masked
+
+
+def create_weight_factors_euclidean_radius(image: np.ndarray):
+    """Function takes in an image as a 2D numpy array and outputs an image
+    multiplied by a matrix with weights of 1/R,
+    with R being the euclidean distance from center of image.
+    The euclidean distance only depends on index or rather the size of image
+    """
+    row, col = image.shape
+    if row % 2 == 0:
+        center_row = int(row / 2)
+    else:
+        center_row = int((row - 1) / 2)
+    if col % 2 == 0:
+        center_col = int(col / 2)
+    else:
+        center_col = int((col - 1) / 2)
+    grid_row, grid_col = np.ogrid[:row, :col]
+    predist = np.maximum(np.abs(grid_row - center_row), np.abs(grid_col - center_col))
+
+    def distmat(a, index):
+        mask = np.ones(a.shape, dtype=bool)
+        mask[index[0], index[1]] = False
+        return distance_transform_edt(mask)
+
+    return image / (distmat(predist, index=[center_row, center_col]) + 1)
+
+
+def create_weight_factors_gauss(image: np.ndarray, std: float):
+    """Function takes in an image as a 2D numpy array and outputs an image
+    multiplied by a matrix with weights of a (2D) Gaussian distribution.
+    """
+    row, col = image.shape
+    gkernrow = signal.gaussian(row, std=std).reshape(row, 1)
+    gkerncol = signal.gaussian(col, std=std).reshape(col, 1)
+    gkern2d = np.outer(gkernrow, gkerncol)
+    return image * gkern2d
