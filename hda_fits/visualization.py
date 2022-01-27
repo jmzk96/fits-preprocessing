@@ -15,7 +15,12 @@ from .types import BoxCoordinates
 
 
 def show_som(
-    som: SOM, channel: int = 0, figsize: Tuple[int, int] = (12, 12), cmap: str = "jet"
+    som: SOM,
+    channel: int = 0,
+    figsize: Tuple[int, int] = (12, 12),
+    cmap: str = "jet",
+    vmin=None,
+    vmax=None,
 ) -> Tuple[Figure, Axes]:
     """
     Function to visualize the SOM nodes in its
@@ -34,12 +39,35 @@ def show_som(
             node = som.get_node(i, j)
 
             if depth > 1:
-                ax.imshow(node[channel, :, :], cmap=cmap)
+                ax.imshow(node[channel, :, :], cmap=cmap, vmin=vmin, vmax=vmax)
             else:
-                ax.imshow(node, cmap=cmap)
+                ax.imshow(node, cmap=cmap, vmin=vmin, vmax=vmax)
 
     fig.subplots_adjust(wspace=0.02, hspace=0.02)
     return fig, axes
+
+
+def show_som_node(
+    som: SOM,
+    row: int,
+    col: int,
+    figsize=(8, 8),
+    vmin=None,
+    vmax=None,
+) -> Tuple[Figure, Axes]:
+
+    node = som.get_node(row, col)
+    # number_of_channels = header.layout.depth
+    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=figsize)
+
+    ax.axis("off")
+
+    ax.imshow(node, vmin=vmin, vmax=vmax, cmap="jet")
+    ax.set_title("radio")
+
+    fig.tight_layout()
+
+    return fig, ax
 
 
 def show_merged_som(
@@ -126,6 +154,46 @@ def show_count_heatmap(
     ax = sns.heatmap(ic.astype("int"), annot=True, fmt="d", cmap="jet")
 
     return fig, ax
+
+
+def show_image(
+    filepath: str,
+    image_number: int,
+    figsize=(24, 8),
+    vmax=None,
+) -> Tuple[Figure, Axes]:
+
+    image = hpink.read_pink_file_image(filepath, image_number=image_number)
+
+    # number_of_channels = header.layout.depth
+    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=figsize)
+    ax.imshow(image, vmin=0.0, vmax=vmax, cmap="jet")
+
+    return fig, ax
+
+
+def show_images(filepath, image_indices, cols=3, img_width=8) -> Tuple[Figure, Axes]:
+    n_images = len(image_indices)
+
+    fig, axes = plt.subplots(
+        ncols=cols,
+        nrows=max([1, -(n_images // -cols)]),
+        figsize=(img_width * cols, (n_images // cols) * img_width),
+    )
+
+    for ax in axes:
+        for a in ax:
+            a.axis("off")
+
+    for i, img_idx in enumerate(image_indices):
+        img = hpink.read_pink_file_image(filepath=filepath, image_number=img_idx)
+
+        axes[i // cols][i % cols].imshow(img, cmap="jet")
+        axes[i // cols][i % cols].set_title(f"[{img_idx}]")
+
+    fig.tight_layout()
+
+    return fig, axes
 
 
 def show_multichannel_image(

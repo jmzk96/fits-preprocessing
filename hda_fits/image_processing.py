@@ -266,6 +266,15 @@ def create_circular_masked_image_from_convex_hull(
     return image_masked
 
 
+def saturate_image(image: np.ndarray, quantile: float = 0.99) -> np.ndarray:
+
+    image_saturated = image.copy()
+    x_q = np.quantile(image, quantile)
+    indices = np.argwhere(image > x_q)
+    image_saturated[indices[:, 0], indices[:, 1]] = x_q
+    return image_saturated
+
+
 def create_weight_factors_euclidean_radius(image: np.ndarray):
     """Function takes in an image as a 2D numpy array and outputs an image
     multiplied by a matrix with weights of 1/R,
