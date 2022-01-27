@@ -172,11 +172,13 @@ def show_image(
     return fig, ax
 
 
-def show_images(filepath, image_indices, cols=3, fig_width=12) -> Tuple[Figure, Axes]:
+def show_images(filepath, image_indices, cols=3, img_width=8) -> Tuple[Figure, Axes]:
     n_images = len(image_indices)
 
     fig, axes = plt.subplots(
-        ncols=3, nrows=n_images, figsize=(fig_width, n_images * fig_width // cols)
+        ncols=cols,
+        nrows=max([1, -(n_images // -cols)]),
+        figsize=(img_width * cols, (n_images // cols) * img_width),
     )
 
     for ax in axes:
@@ -186,7 +188,7 @@ def show_images(filepath, image_indices, cols=3, fig_width=12) -> Tuple[Figure, 
     for i, img_idx in enumerate(image_indices):
         img = hpink.read_pink_file_image(filepath=filepath, image_number=img_idx)
 
-        axes[i // cols][i % cols].imshow(img[0, :, :], cmap="jet")
+        axes[i // cols][i % cols].imshow(img, cmap="jet")
         axes[i // cols][i % cols].set_title(f"[{img_idx}]")
 
     fig.tight_layout()
