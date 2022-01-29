@@ -39,7 +39,9 @@ def min_max(data: np.ndarray):
 
 def log_scale(data: np.ndarray, eps: float = 0.001):
     min_scaled_array = data - data.min() + eps
-    return np.log(min_scaled_array)
+    data_log_scaled = np.log(min_scaled_array)
+    data_log_scaled_translated = data_log_scaled - data_log_scaled.min()
+    return data_log_scaled_translated
 
 
 def calculate_signal_to_noise_ratio(image: np.ndarray) -> float:
