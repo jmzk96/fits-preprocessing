@@ -259,6 +259,8 @@ def create_circular_masked_image_from_convex_hull(
         convex_hull_coordinates=convex_hull_coordinates, point=center
     )
 
+    radius = np.min([radius, (image_for_mask_creation.shape[0] - 1) / 2])
+
     image_masked = create_circular_masked_image(
         image_to_be_masked, radius=radius, fill_with=fill_with
     )
