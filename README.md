@@ -18,43 +18,13 @@ import hda_fits
 importieren. 
 
 
-## Beispiel Use-Case
+# Nutzung
 
-Ein vollständiger Use-Case aus
+Die Nutzung der Library ist in den Tutorialnotebooks, die in `tutorial_notebooks/` zu finden sind, beschrieben.
+Hier sind die Use-Cases im Rahmen der Projektarbeit nach aufsteigender Komplexität dargestellt. Weiterhin ist
+es empfehlenswert sich zunächst mit der theoretisch fachlichen Abhandlung des Forschungsgegenstands vertraut zu machen
+und hierzu den Projektbericht, der als PDF unter `docs/Projektbericht.pdf` verfügbar ist, zu lesen.
 
-* Einlesen des Shimwell-Datenkatalogs
-* Filtern des Datenkatalogs nach spezifischem Mosaic
-* Einlesen eines Mosaic-Files
-* Speichern von mehreren Cutouts als `PINK`-Binärdatei
-
-kann wie folgt durchgeführt werden.
-
-```python
-import hda_fits as hf
-
-
-# Laden des Shimwell-Katalogs mit reduzierter Spaltenanzahl
-#   Spalten:  ["Source_Name", "RA", "DEC", "Mosaic_ID"]
-table = hf.read_shimwell_catalog("data/LOFAR_HBA_T1_DR1_catalog_v1.0.srl.fits", reduced=True)
-
-# Filtern des Pandas DF nach Rows, die zu Mosaic P205+55 gehören
-table = table[table.Mosaic_ID.str.contains("P205")]
-
-# Mosaic Einlesen
-hdu = hf.load_mosaic("P205+55", "../data/")[0]
-
-# Koordinaten der Himmelsobjekte in Liste speichern
-coordinates = table.loc[:, ["RA", "DEC"]].values.tolist()
-
-# Bildausschnitte mit Dimension 200x200px der Koordinaten aus Mosaic
-# ausschneiden und in kartesischem PINK-Format v2 speichern
-hf.write_mosaic_objects_to_pink_file_v2(
-    filepath="data/P205+55_pink_v2.bin",
-    hdu=hdu,
-    coordinates=coordinates,
-    image_size=200  # RectangleSize(200, 200)
-)
-```
 
 # Entwicklung
 
