@@ -28,13 +28,13 @@ und hierzu den Projektbericht, der als PDF unter [docs/Projektbericht.pdf](docs/
 Die Tutorianotebooks beschreiben hierbei folgende Sachverhalte und Use-Cases:
 
 ### 01 - Intro, Radiobilder und PINK-Dateiformate 
-[](tutorial_notebooks/01_Intro_Radiobilder_und_PINK.ipynb)
+[01_Intro_Radiobilder_und_PINK.ipynb](tutorial_notebooks/01_Intro_Radiobilder_und_PINK.ipynb)
 
 ### 02 - Optische Bilder und Pan-STARRs
-[](tutorial_notebooks/02_Optische_Bilder_PanSTARRS.ipynb)
+[02_Optische_Bilder_PanSTARRS.ipynb](tutorial_notebooks/02_Optische_Bilder_PanSTARRS.ipynb)
 
 ### 03 - Multichannel-Bilder und Bildtransformationen
-[](tutorial_notebooks/03_Transformationen_und_Multichannel_PINK.ipynb)
+[03_Transformationen_und_Multichannel_PINK.ipynb](tutorial_notebooks/03_Transformationen_und_Multichannel_PINK.ipynb)
 
 # Entwicklung
 
