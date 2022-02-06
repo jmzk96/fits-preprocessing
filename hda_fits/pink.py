@@ -27,6 +27,18 @@ log.setLevel(logging.DEBUG)
 
 
 def read_pink_file_header_from_stream(file_stream: BinaryIO) -> PinkHeader:
+    """
+    a function to read and obtain header information from pink file. This function is used by read_file_pink_header.
+
+    Parameters
+    ----------
+    file_stream :  BinaryIO
+        file object for pink file
+
+    Returns
+    ----------
+    PinkHeader
+    """
     (
         version,
         file_type,
@@ -57,6 +69,18 @@ def read_pink_file_header_from_stream(file_stream: BinaryIO) -> PinkHeader:
 
 
 def read_pink_file_header(filepath: str) -> PinkHeader:
+    """
+    a function that uses read_pink_file_header_from_stream to read pink file
+
+    Parameters
+    ----------
+    filepath : str
+        filepath to pink file
+
+    Returns
+    ----------
+    PinkHeader
+    """
     with open(filepath, "rb") as file_stream:
         header = read_pink_file_header_from_stream(file_stream=file_stream)
 
@@ -69,10 +93,23 @@ def read_pink_file_image_from_stream(
     header_offset: int,
     layout: Layout,
 ):
-    """Read an image from an absolute position
+    """
+    a function that reads a specific image from pink file. This function is used by read_pink_file_image.
 
-    This function will seek to the absolute position in the open file
-    and read the `image_size` floating point values.
+    Parameters
+    ----------
+    file_stream : BinaryIO
+        file object of pink file
+    image_number : int
+        number or index of image in pink file
+    header_offset :  int
+        offset of header in pink file
+    layout : Layout
+        Layout of image in pink file
+
+    Returns
+    ----------
+    numpy.ndarray
     """
     image_size = layout.width * layout.height * layout.depth
     file_stream.seek(image_size * image_number * 4 + header_offset, 0)
@@ -87,7 +124,20 @@ def read_pink_file_image_from_stream(
 
 
 def read_pink_file_image(filepath: str, image_number: int) -> np.ndarray:
-    """Reads and reshapes the data of a .pink image"""
+    """
+    a function to read image from pink file.
+
+    Parameters
+    ----------
+    filepath : str
+        filepath to pink file
+    image_number : int
+        number or index of image in pink file
+
+    Returns
+    ----------
+    numpy.ndarray
+    """
     with open(filepath, "rb") as file_stream:
         header = read_pink_file_header_from_stream(file_stream=file_stream)
         layout = header.layout
@@ -107,8 +157,20 @@ def read_pink_file_image(filepath: str, image_number: int) -> np.ndarray:
 def read_pink_file_multiple_images(
     filepath: str, image_numbers: List[int]
 ) -> List[np.ndarray]:
-    """Reads and reshapes multiple .pink images"""
+    """
+    a function to read multiple images from pink file.
 
+    Parameters
+    ----------
+    filepath : str
+        filepath to pink file
+    image_number : List[int]
+        list of numbers or indexes of image in pink file
+
+    Returns
+    ----------
+    List[numpy.ndarray]
+    """
     images = []
 
     with open(filepath, "rb") as file_stream:
@@ -135,6 +197,29 @@ def write_pink_file_header(
     overwrite: bool = False,
     version: str = "v2",
 ):
+    """
+    a function to write pink file header.
+
+    Parameters
+    ----------
+    filepath : str
+        filepath to pink file that is to be written
+    number of images : int
+        number of images that are to be written in pink file
+    image_height : int
+        height of image
+    image_width : int
+        width of image
+    overwrite : bool
+        Boolean to set if a pink file header should be overwritten. Default is False.
+    version : str
+        file format version to be written for header. v1 for version 1 and v2 for verison 2.
+        Default is v2.
+
+    Returns
+    ----------
+    None
+    """
     if version == "v2":
         with open(filepath, "r+b" if overwrite else "wb") as f:
             f.write(
@@ -155,6 +240,24 @@ def write_pink_file_header_multichannel(
     image_layout: Layout,
     overwrite: bool = False,
 ):
+    """
+    a function to write pink file header for multichannels or multidepths in version 2.
+
+    Parameters
+    ----------
+    filepath :  str
+        filepath to pink file to be written
+    number_of_images : int
+        number of images to be written
+    image_layout : int
+        layout of image
+    overwrite : bool
+        Boolean to set if a pink file header should be overwritten. Default is False.
+
+    Returns
+    ----------
+    None
+    """
 
     width, height, depth = image_layout
 
@@ -165,6 +268,18 @@ def write_pink_file_header_multichannel(
 
 
 def convert_pink_file_header_v1_to_v2(filepath: str):
+    """
+    converts a pink file with file header format of version 1 to version 2
+
+    Parameters
+    ----------
+    filepath : str
+        filepath of pink file to be converted
+
+    Returns
+    ----------
+    None
+    """
     with open(filepath, "rb") as file_stream:
         (
             number_of_images,
@@ -199,6 +314,18 @@ def convert_pink_file_header_v1_to_v2(filepath: str):
 
 
 def convert_pink_file_header_v2_to_v1(filepath: str):
+    """
+    converts a pink file with file header format of version 2 to version 1
+
+    Parameters
+    ----------
+    filepath : str
+        filepath of pink file to be converted
+
+    Returns
+    ----------
+    None
+    """
     with open(filepath, "rb") as file_stream:
         list_of_parameters = struct.unpack("i" * 8, file_stream.read(4 * 8))
         number_of_images, image_height, image_width = (
@@ -232,6 +359,20 @@ def convert_pink_file_header_v2_to_v1(filepath: str):
 
 
 def write_pink_file_v2_data(filepath: str, data: np.ndarray):
+    """
+    writes image data to pink file
+
+    Parameters
+    ----------
+    filepath : str
+        filepath of pink file to be written
+    data : np.ndarray
+        image data to be written
+
+    Returns
+    ----------
+    None
+    """
     with open(filepath, "ab") as f:
         f.write(struct.pack("%sf" % data.size, *data.tolist()))
 
@@ -246,6 +387,32 @@ def write_mosaic_objects_to_pink_file_v2(
     fill_nan=False,
     overwrite_header=False,
 ) -> List[bool]:
+    """
+    writes objects from a mosaic in a pink file of file format version 2
+
+    Parameters
+    ----------
+    filepath : str
+        filepath of pink file to be written
+    hdu :  PrimaryHDU
+        PrimaryHDU of mosaic
+    coordinates : List[WSCoordinates]
+        List of WSCoordinates of objects in mosaic
+    image_size : Union[int, RectangleSize]
+        size of image/cutout to be written
+    min_max_scale :  bool
+        scales cutouts based on minimum and maximum. Default is False
+    denoise : bool
+        denoises cutouts based on their mean. Default  is True
+    fill_nan : bool
+        fills NaN with mean. Default is False
+    overwrite_header : bool
+        overwrites header of pink file. Default is False
+
+    Returns
+    ----------
+    None
+    """
 
     if isinstance(image_size, int):
         image_size = RectangleSize(image_size, image_size)
@@ -319,6 +486,31 @@ def write_all_objects_pink_file_v2(
     save_in_different_files: bool = True,
     download: bool = False,
 ):
+    """
+    writes objects from a catalog in a pink file of file format version 2
+
+    Parameters
+    ----------
+    catalog_filepath : str
+        filepath of FITS file of catalog
+    filepath : str
+        filepath of pink file to be written
+    mosaic_path : str
+        folder containing files of mosaics
+    image_size : Union[int, RectangleSize]
+        size of image/cutout to be written
+    min_max_scale :  bool
+        scales cutouts based on minimum and maximum. Default is True
+    save_in_different_files : bool
+        save images in different files based on mosaic name. Default is True
+    download : bool
+        Sets download parameter in load_mosaic. If True, mosaic files are downloaded if they
+        dont exist. Default is False
+
+    Returns
+    ----------
+    None
+    """
     if isinstance(image_size, int):
         image_size = RectangleSize(image_height=image_size, image_width=image_size)
 
@@ -367,9 +559,31 @@ def write_catalog_objects_pink_file_v2(
     fill_nan: bool = False,
 ) -> pd.DataFrame:
     """
-    Writes all images in a given catalog to a binary file_stream in PINK v2 format.
-    This includes loading (and optionally downloading) each required mosaic
-    and updating the sum of written images at the end.
+    writes objects from a catalog in a single pink file of file format version 2
+
+    Parameters
+    ----------
+    filepath : str
+        filepath of pink file to be written
+    catalog : pandas.DataFrame
+        catalog with mosaics in the form of a dataframe
+    mosaic_path : str
+        folder containing files of mosaics
+    image_size : Union[int, RectangleSize]
+        size of image/cutout to be written
+    min_max_scale :  bool
+        scales cutouts based on minimum and maximum. Default is False.
+    denoise : bool
+        denoises cutouts based on their mean. Default  is True
+    download : bool
+        Sets download parameter in load_mosaic. If True, mosaic files are downloaded if they
+        dont exist. Default is False
+    fill_nan : bool
+        fills NaN with mean. Default is False
+
+    Returns
+    ----------
+    None
     """
 
     if isinstance(image_size, int):

@@ -12,18 +12,75 @@ log.setLevel(logging.DEBUG)
 
 
 class SOM:
+    """
+    A class to represent the SOM
+
+    Attributes
+    ----------
+    header : SOMHeader
+        header of SOM
+    layout : Layout
+        layout of SOM in som file
+    channels : int
+        depth of neuron in SOM
+    nodes : List[np.ndarray]
+        nodes/image data that are contained in som file after header
+
+    Methods
+    ----------
+    get_node(row:int,column:int)
+        gets a specific node from SOM
+
+    """
+
     def __init__(self, header: SOMHeader, nodes: List[np.ndarray]):
+        """
+        Constructor for SOM
+
+        Parameters
+        ----------
+        header :  SOMHeader
+            header of SOM
+        nodes : List[np.ndarray]
+            nodes/image data that are contained in som file after header
+        """
         self.header = header
         self.layout = header.som_layout
         self.channels = header.neuron_layout.depth
         self.nodes = nodes
 
     def get_node(self, row: int, column: int):
+        """
+        a method of SOM to get a specific node from SOM
+
+        Parameters
+        ----------
+        row : int
+            row of SOM which contains node. Starts with 0.
+        column : int
+            column of SOM which contains node. Starts with 0.
+
+        Returns
+        ----------
+        numpy.ndarray
+        """
         grid_offset = (row * self.layout.width) + column
         return self.nodes[grid_offset]
 
 
 def read_som_file_header_from_stream(file_stream: BinaryIO) -> SOMHeader:
+    """
+    a function to read and obtain header information from som file. This function is used by read_file_som_header.
+
+    Parameters
+    ----------
+    file_stream :  BinaryIO
+        file object for som file
+
+    Returns
+    ----------
+    SOMHeader
+    """
     (
         version,
         file_type,
@@ -72,6 +129,18 @@ def read_som_file_header_from_stream(file_stream: BinaryIO) -> SOMHeader:
 
 
 def read_som_file_header(filepath: str) -> SOMHeader:
+    """
+    a function that uses read_som_file_header_from_stream to read som file
+
+    Parameters
+    ----------
+    filepath : str
+        filepath to som file
+
+    Returns
+    ----------
+    SOMHeader
+    """
     with open(filepath, "rb") as file_stream:
         header = read_som_file_header_from_stream(file_stream=file_stream)
 
@@ -84,6 +153,24 @@ def read_som_file_node_from_stream(
     header_offset: int,
     layout: Layout,
 ) -> np.ndarray:
+    """
+    a function that reads a specific SOM node from som file
+
+    Parameters
+    ----------
+    file_stream : BinaryIO
+        file object of som file
+    image_number : int
+        number or index of node in som file
+    header_offset :  int
+        offset of header in som file
+    layout : Layout
+        Layout of neuron in som file
+
+    Returns
+    ----------
+    numpy.ndarray
+    """
     image_size = layout.width * layout.height * layout.depth
     file_stream.seek(image_size * image_number * 4 + header_offset, 0)
     data = struct.unpack("f" * image_size, file_stream.read(image_size * 4))
@@ -97,7 +184,18 @@ def read_som_file_node_from_stream(
 
 
 def read_som(filepath: str) -> SOM:
-    """Reads and reshapes the data of a .pink image"""
+    """
+    a function to read SOMs from som file and return SOM object
+
+    Parameter
+    ----------
+    filepath : str
+        filepath to som file
+
+    Returns
+    ----------
+    SOM
+    """
     with open(filepath, "rb") as file_stream:
         header = read_som_file_header_from_stream(file_stream=file_stream)
         som_layout = header.som_layout
